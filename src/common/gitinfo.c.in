@@ -1,0 +1,23 @@
+/**
+ * @file
+ *
+ * @brief Embedded git information.
+ *
+ * @copyright Las Marionetas is free software: you can redistribute it and/or
+ *            modify it under the terms of the GNU General Public License
+ *            as published by the Free Software Foundation, either version
+ *            2 of the License, or (at your option) any later version.
+ *            A full copy of the GNU General Public License can be found in
+ *            LICENSE
+ */
+#include "gitinfo.h"
+
+const char GitSHA1[] = "@GIT_HEAD_SHA1@";
+const char GitShortSHA1[] = "@GIT_HEAD_SHORT_SHA1@";
+const char GitCommitDate[] = "@GIT_COMMIT_DATE_ISO8601@";
+const char GitCommitAuthorName[] = "@GIT_AUTHOR_NAME@";
+const char GitTag[] = "@GIT_TAG@";
+time_t GitCommitTimeStamp = @GIT_COMMIT_TSTAMP@;
+bool GitUncommittedChanges = @GIT_IS_DIRTY@;
+bool GitHaveInfo = @GIT_RETRIEVED_STATE@;
+int GitRevision = @GIT_REV_LIST_COUNT@;
