@@ -1,4 +1,5 @@
 #include "hooker.h"
+#include "rzfastalloc.h"
 #include <new>
 #include <stdlib.h>
 #include <stdio.h>
@@ -30,4 +31,9 @@ void SetupHooks()
     Hook_Function(0x009979CB, crt_new); // op new
     Hook_Function(0x009982F1, crt_del); // op delete
     Hook_Function(0x009A1F16, _msize);
+
+    // RZ Allocator wrappers.
+    Hook_Function(0x00596B2A, RZFastAlloc);
+    Hook_Function(0x00596B3B, RZFastFree);
+    Hook_Function(0x00596B51, RZFastRealloc);
 }

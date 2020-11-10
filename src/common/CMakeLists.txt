@@ -8,10 +8,12 @@ include(GitWatcher)
 
 set(COMMON_INCLUDES
     .
+    rz
 )
 
 set(COMMON_SRC
     ${GIT_POST_CONFIGURE_FILE}
+    rz/rzfastalloc.cpp
 )
 
 set(COMMON_LIBS stringcompat)
