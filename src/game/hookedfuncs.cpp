@@ -1,8 +1,9 @@
 #include "hooker.h"
 #include "rzfastalloc.h"
+#include "rzstring.h"
 #include <new>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 // This global controls which address is used when needed inline in code.
 const BinaryType geBinaryMode = BINARY_GAME;
@@ -36,4 +37,20 @@ void SetupHooks()
     Hook_Function(0x0040E923, RZFastAlloc);
     Hook_Function(0x0040E934, RZFastFree);
     Hook_Function(0x0040E94A, RZFastRealloc);
+
+    // cRZString class.
+    Hook_Any(0x0040CCA7, cRZString::QueryInterface);
+    Hook_Any(0x005B9B92, cRZString::AddRef);
+    Hook_Any(0x0040CCC9, cRZString::Release);
+    Hook_Any(0x0040FE7B, cRZString::ToChar);
+    // Hook_Any(0x0040FE7B, cRZString::Data); Optimised out as code is same for ToChar
+    Hook_Any(0x0040CFB2, cRZString::Strlen);
+    Hook_Any(0x0040CDCE, cRZString::IsEmpty);
+    Hook_Any(0x0040CCE3, cRZString::Copy);
+    Hook_Any(0x0040E07D, cRZString::Resize);
+    // Hook_Any(0x0040D2A1, cRZString::Erase);
+    Hook_Any(0x0040CD66, cRZString::Sprintf);
+    Hook_Any(0x0040E2DE, cRZString::SprintfVaList);
+    Hook_Any(0x0040CDBA, cRZString::MakeLower);
+    Hook_Any(0x0040CDC4, cRZString::MakeUpper);
 }

@@ -14,8 +14,8 @@ set(COMMON_INCLUDES
 
 set(COMMON_SRC
     ${GIT_POST_CONFIGURE_FILE}
-    rz/rzstring.cpp
     rz/rzfastalloc.cpp
+    rz/rzstring.cpp
 )
 
 set(COMMON_LIBS stringcompat)
