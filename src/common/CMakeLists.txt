@@ -18,17 +18,19 @@ set(COMMON_SRC
     rz/rzstring.cpp
 )
 
-set(COMMON_LIBS stringcompat)
-
 if(WIN32 OR "${CMAKE_SYSTEM}" MATCHES "Windows")
-    # Link our mini posix library on windows
+    # Link our mini posix library on windows unless we are using mingw which has implementations already.
     list(APPEND COMMON_LIBS miniposix)
 
     # Add thread releated implementations.
+    if(Threads_FOUND)
+        list(APPEND COMMON_SRC rz/rzcriticalsection_win32.cpp)
+    endif()
 else()
     # Add thread releated implementations.
     if(Threads_FOUND)
         list(APPEND COMMON_LIBS Threads::Threads)
+        list(APPEND COMMON_SRC rz/rzcriticalsection_posix.cpp)
     endif()
 endif()
 
@@ -38,13 +40,7 @@ if(STANDALONE)
     add_library(common STATIC ${COMMON_SRC} ${COMMON_HEADERS})
     target_include_directories(common PUBLIC ${COMMON_INCLUDES})
     add_dependencies(common check_git)
-
-    # Link our mini posix library on windows unless we are using mingw which has implementations already.
-    if(WIN32 OR "${CMAKE_SYSTEM}" MATCHES "Windows")
-        if(NOT MINGW) 
-            target_link_libraries(common PUBLIC miniposix)
-        endif()
-    endif()
+    target_link_libraries(common PUBLIC ${COMMON_LIBS})
 endif()
 
 # DLL builds expose any globals as a reference that the injectable dll builds provide hooks against.
@@ -55,8 +51,5 @@ if(DLLBUILD)
     target_include_directories(commondll PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty/stlport ${COMMON_INCLUDES} hooks)
     add_dependencies(commondll check_git)
     target_compile_definitions(commondll PUBLIC DLL_BUILD)
-
-    if(NOT MINGW) 
-        target_link_libraries(commondll PUBLIC miniposix)
-    endif()
+    target_link_libraries(commondll PUBLIC ${COMMON_LIBS})
 endif()

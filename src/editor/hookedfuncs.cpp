@@ -1,4 +1,5 @@
 #include "hooker.h"
+#include "rzcriticalsection.h"
 #include "rzfastalloc.h"
 #include "rzstring.h"
 #include <new>
@@ -54,4 +55,11 @@ void SetupHooks()
     Hook_Any(0x0059E4BB, cRZString::MakeLower);
     Hook_Any(0x0059E4C5, cRZString::MakeUpper);
 #endif
+    // cRZCriticalSection class.
+    Hook_Any(0x005BCA8C, cRZCriticalSection::Hookable_Ctor);
+    Hook_Any(0x005BCA09, cRZCriticalSection::~cRZCriticalSection);
+    Hook_Any(0x005BCA27, cRZCriticalSection::Release);
+    Hook_Any(0x005BCA40, cRZCriticalSection::Lock);
+    Hook_Any(0x005BCA77, cRZCriticalSection::Unlock);
+    Hook_Any(0x005BCA53, cRZCriticalSection::TryLock);
 }

@@ -68,6 +68,10 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 
+# Find needed libraries
+# Check for threading, win32 or posix.
+find_package(Threads)
+
 # Build 3rd party libs
 if(WIN32 OR "${CMAKE_SYSTEM}" MATCHES "Windows")
     add_subdirectory(thirdparty/miniposix EXCLUDE_FROM_ALL)
