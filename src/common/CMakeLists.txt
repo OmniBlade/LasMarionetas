@@ -14,6 +14,7 @@ set(COMMON_INCLUDES
 
 set(COMMON_SRC
     ${GIT_POST_CONFIGURE_FILE}
+    rz/rzcomdlldirector.cpp
     rz/rzfastalloc.cpp
     rz/rzstring.cpp
     rz/rzthreadsafe.cpp
@@ -54,7 +55,7 @@ if(DLLBUILD)
     # Note that this limits us to mostly C++98 level STL features.
     target_include_directories(commondll PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty/stlport ${COMMON_INCLUDES} hooks)
     add_dependencies(commondll check_git)
-    target_compile_definitions(commondll PUBLIC DLL_BUILD)
+    target_compile_definitions(commondll PUBLIC DLL_BUILD MATCH_ABI)
     target_link_libraries(commondll PUBLIC ${COMMON_LIBS})
     target_compile_features(commondll PUBLIC cxx_std_17) # Pass the required standard down.
 endif()
