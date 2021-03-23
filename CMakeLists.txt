@@ -77,6 +77,8 @@ if(WIN32 OR "${CMAKE_SYSTEM}" MATCHES "Windows")
     add_subdirectory(thirdparty/miniposix EXCLUDE_FROM_ALL)
 endif()
 
+add_subdirectory(thirdparty/compat EXCLUDE_FROM_ALL)
+
 # Build lasmarionetas
 add_subdirectory(src)
 

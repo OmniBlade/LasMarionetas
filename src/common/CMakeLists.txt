@@ -18,6 +18,8 @@ set(COMMON_SRC
     rz/rzstring.cpp
 )
 
+set(COMMON_LIBS compat)
+
 if(WIN32 OR "${CMAKE_SYSTEM}" MATCHES "Windows")
     # Link our mini posix library on windows unless we are using mingw which has implementations already.
     list(APPEND COMMON_LIBS miniposix)
