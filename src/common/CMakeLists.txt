@@ -16,6 +16,7 @@ set(COMMON_SRC
     ${GIT_POST_CONFIGURE_FILE}
     rz/rzfastalloc.cpp
     rz/rzstring.cpp
+    rz/rzthreadsafe.cpp
 )
 
 set(COMMON_LIBS compat)
