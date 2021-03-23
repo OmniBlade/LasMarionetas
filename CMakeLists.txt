@@ -48,6 +48,7 @@ endif()
 
 # This doesn't really work yet, work ongoing to make it usable
 option(STANDALONE "Build a standalone version." ${DEFAULT_STANDALONE})
+option(PLUGIN "Build an extension plugin for the original game." ON)
 
 # Only MSVC generates the correct vtable layout for ABI compatibility needed for dll injection.
 if(MSVC)
