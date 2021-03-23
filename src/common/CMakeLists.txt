@@ -43,6 +43,7 @@ if(STANDALONE)
     target_include_directories(common PUBLIC ${COMMON_INCLUDES})
     add_dependencies(common check_git)
     target_link_libraries(common PUBLIC ${COMMON_LIBS})
+    target_compile_features(common PUBLIC cxx_std_17) # Pass the required standard down.
 endif()
 
 # DLL builds expose any globals as a reference that the injectable dll builds provide hooks against.
@@ -54,4 +55,5 @@ if(DLLBUILD)
     add_dependencies(commondll check_git)
     target_compile_definitions(commondll PUBLIC DLL_BUILD)
     target_link_libraries(commondll PUBLIC ${COMMON_LIBS})
+    target_compile_features(commondll PUBLIC cxx_std_17) # Pass the required standard down.
 endif()
