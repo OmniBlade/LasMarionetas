@@ -16,6 +16,8 @@ set(COMMON_SRC
     ${GIT_POST_CONFIGURE_FILE}
     rz/rzcomdlldirector.cpp
     rz/rzfastalloc.cpp
+    rz/rzrandom.cpp
+    rz/rzrandomsuper.cpp
     rz/rzstring.cpp
     rz/rzthreadsafe.cpp
 )
