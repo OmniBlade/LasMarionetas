@@ -15,11 +15,13 @@ set(COMMON_INCLUDES
 set(COMMON_SRC
     ${GIT_POST_CONFIGURE_FILE}
     rz/rzcomdlldirector.cpp
+    rz/rzdate.cpp
     rz/rzfastalloc.cpp
     rz/rzrandom.cpp
     rz/rzrandomsuper.cpp
     rz/rzstring.cpp
     rz/rzthreadsafe.cpp
+    rz/rztime.cpp
 )
 
 set(COMMON_LIBS compat)
