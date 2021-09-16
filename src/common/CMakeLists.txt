@@ -17,6 +17,7 @@ set(COMMON_INCLUDES
 
 set(COMMON_SRC
     ${GIT_POST_CONFIGURE_FILE}
+    gimexstd.cpp
     rz/rzcmdline.cpp
     rz/rzcomdlldirector.cpp
     rz/rzdate.cpp
@@ -28,7 +29,7 @@ set(COMMON_SRC
     rz/rztime.cpp
 )
 
-set(COMMON_LIBS compat)
+set(COMMON_LIBS compat gimex)
 
 if(WIN32 OR "${CMAKE_SYSTEM}" MATCHES "Windows")
     # Link our mini posix library on windows unless we are using mingw which has implementations already.
