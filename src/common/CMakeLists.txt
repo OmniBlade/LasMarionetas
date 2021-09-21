@@ -6,6 +6,9 @@ set(GIT_PRE_CONFIGURE_FILE "gitinfo.c.in")
 set(GIT_POST_CONFIGURE_FILE "${CMAKE_CURRENT_BINARY_DIR}/gitinfo.c")
 include(GitWatcher)
 
+# Add a macro for the best function name printing compiler macro available.
+include(CurrentFunction)
+
 set(COMMON_INCLUDES
     .
     gz
@@ -14,6 +17,7 @@ set(COMMON_INCLUDES
 
 set(COMMON_SRC
     ${GIT_POST_CONFIGURE_FILE}
+    rz/rzcmdline.cpp
     rz/rzcomdlldirector.cpp
     rz/rzdate.cpp
     rz/rzfastalloc.cpp
@@ -50,6 +54,7 @@ if(STANDALONE OR PLUGIN)
     add_dependencies(common check_git)
     target_link_libraries(common PUBLIC ${COMMON_LIBS})
     target_compile_features(common PUBLIC cxx_std_17) # Pass the required standard down.
+    target_current_function_define(common)
 endif()
 
 # DLL builds expose any globals as a reference that the injectable dll builds provide hooks against.
@@ -62,4 +67,5 @@ if(DLLBUILD)
     target_compile_definitions(commondll PUBLIC DLL_BUILD MATCH_ABI)
     target_link_libraries(commondll PUBLIC ${COMMON_LIBS})
     target_compile_features(commondll PUBLIC cxx_std_17) # Pass the required standard down.
+    target_current_function_define(commondll)
 endif()
