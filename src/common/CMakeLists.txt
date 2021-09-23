@@ -48,7 +48,7 @@ endif()
 
 file(GLOB_RECURSE COMMON_HEADERS "*.h")
 
-if(STANDALONE OR PLUGIN)
+if(STANDALONE OR PLUGIN OR BUILD_TESTS)
     add_library(common STATIC ${COMMON_SRC} ${COMMON_HEADERS})
     target_include_directories(common PUBLIC ${COMMON_INCLUDES})
     add_dependencies(common check_git)

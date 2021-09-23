@@ -49,6 +49,7 @@ endif()
 # This doesn't really work yet, work ongoing to make it usable
 option(STANDALONE "Build a standalone version." ${DEFAULT_STANDALONE})
 option(PLUGIN "Build an extension plugin for the original game." ON)
+option(BUILD_TESTS "Build tests to check againt regressions." OFF)
 
 # Only MSVC generates the correct vtable layout for ABI compatibility needed for dll injection.
 if(MSVC)
@@ -79,6 +80,12 @@ add_subdirectory(thirdparty/compat EXCLUDE_FROM_ALL)
 
 # Build lasmarionetas
 add_subdirectory(src)
+
+if(BUILD_TESTS)
+    # Tests need to respect some options so need to occur after the options are set.
+    enable_testing()
+    add_subdirectory(tests)
+endif()
 
 if(STANDALONE)
     message(STATUS "  A standalone executable will be built for each target.")
