@@ -47,7 +47,7 @@ typedef struct
     int8_t pixel_depth;
     int8_t image_descriptor;
 } TGAHeader;
-    
+
 #pragma pack(pop)
 
 #ifdef __cplusplus

@@ -11,8 +11,8 @@
  *            LICENSE
  */
 #include <gimex.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 typedef struct GSTREAM
@@ -63,12 +63,12 @@ int64_t GIMEX_API glen(GSTREAM *stream)
     size_t len = 0;
     size_t start = ftell(stream->fp);
     fseek(stream->fp, 0, SEEK_END);
-    len = ftell(stream->fp); 
+    len = ftell(stream->fp);
     fseek(stream->fp, start, SEEK_SET);
     return len;
 }
 
-int main(int argc, char** argv)
+int main(int argc, char **argv)
 {
     GSTREAM stream;
     GINFO *info;
@@ -141,10 +141,7 @@ int main(int argc, char** argv)
             about = GIMEX_about();
 
             if (about != NULL) {
-                printf("Using GIMEX module '%s' (%d) for destination file '%s'.\n",
-                    about->long_type,
-                    gimex_index,
-                    dst_name);
+                printf("Using GIMEX module '%s' (%d) for destination file '%s'.\n", about->long_type, gimex_index, dst_name);
             }
 
             gfree(about);

@@ -30,7 +30,7 @@ int GIMEX_API FSH_is(GSTREAM *stream)
             printf("This file is a ShpF type file.\n");
             return 100;
         }
-        
+
         if (fourcc == GIMEX_ID('F', 'n', 't', 'F')) {
             printf("This file is a FntF type file.\n");
             return 98;

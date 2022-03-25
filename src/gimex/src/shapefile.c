@@ -12,7 +12,8 @@
  */
 #include "shapefile.h"
 
-int SHPRReadShapeFile(void *stream, ShapeList **list, int unk1, int unk2, unsigned pimary_id, unsigned secondary_id, int unk3)
+int SHPRReadShapeFile(
+    void *stream, ShapeList **list, int unk1, int unk2, unsigned pimary_id, unsigned secondary_id, int unk3)
 {
     return 0;
 }

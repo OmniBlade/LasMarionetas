@@ -239,7 +239,7 @@ static int PNG_write_gimex(png_structp png_ptr, png_infop info_ptr, const GINFO 
 /* libpng GIMEX interface */
 int GIMEX_API PNG_is(GSTREAM *stream)
 {
-    char buff[8];
+    uint8_t buff[8];
 
     gseek(stream, 0);
     gread(stream, buff, 8);

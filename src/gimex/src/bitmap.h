@@ -107,7 +107,8 @@ typedef struct
     uint32_t gamma_blue;
 } BITMAPV4HEADER;
 
-typedef struct {
+typedef struct
+{
     BITMAPFILEHEADER file;
     BITMAPV4HEADER bmp;
 } BITMAPHEADER;

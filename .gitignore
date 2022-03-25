@@ -34,3 +34,4 @@ CPackSourceConfig.cmake
 *.tmp
 *.bak
 thumbs.db
+/CMakeUserPresets.json

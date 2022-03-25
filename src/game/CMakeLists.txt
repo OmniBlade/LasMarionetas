@@ -2,23 +2,18 @@ set(GAME_SRC
     main.cpp
 )
 
-file(GLOB_RECURSE GAME_HEADERS "*.h")
-
 if(DLLBUILD)
     include(TargetExports)
-    add_library(lasmarionetas_lib SHARED dllmain.cpp hookedfuncs.cpp hookedglobals.cpp ${GAME_SRC} ${GAME_HEADERS})
-    target_link_libraries(lasmarionetas_lib PRIVATE commondll)
-    set_target_properties(lasmarionetas_lib PROPERTIES OUTPUT_NAME d3d9 PDB_NAME lasmarionetasdll)
+    add_library(marionetas_lib SHARED dllmain.cpp hookedfuncs.cpp hookedglobals.cpp ${GAME_SRC})
+    target_link_libraries(marionetas_lib PRIVATE gzframework_people)
+    set_target_properties(marionetas_lib PROPERTIES OUTPUT_NAME marionetas PDB_NAME marionetasdll)
     
-    target_exports(lasmarionetas_lib SYMBOLS
-        StartHooking
-        StopHooking
-        Direct3DCreate9=FakeDirect3DCreate9
-        Direct3DShaderValidatorCreate9=FakeDirect3DShaderValidatorCreate9
+    target_exports(marionetas_lib SYMBOLS
+        SetupHooks
     )
 endif()
 
 if(STANDALONE)
-    add_executable(lasmarionetas ${GAME_SRC} ${GAME_HEADERS})
-    target_link_libraries(lasmarionetas PRIVATE common)
+    add_executable(marionetas ${GAME_SRC})
+    target_link_libraries(marionetas PRIVATE gzframework)
 endif()

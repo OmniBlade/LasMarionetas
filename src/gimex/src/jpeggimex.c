@@ -17,8 +17,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <jpeglib.h>
 #include <jerror.h>
+#include <jpeglib.h>
 
 /* Custom error handling for libjpeg */
 
@@ -101,7 +101,7 @@ static void gimex_skip_input_data(j_decompress_ptr cinfo, long num_bytes)
 
 static void gimex_term_source(j_decompress_ptr cinfo) {}
 
-static void gimex_stream_src(j_decompress_ptr cinfo, GSTREAM* stream)
+static void gimex_stream_src(j_decompress_ptr cinfo, GSTREAM *stream)
 {
     struct gimex_source_mgr *src;
 
@@ -159,13 +159,14 @@ static void gimex_term_destination(j_compress_ptr cinfo)
     }
 }
 
-static void gimex_stream_dest(j_compress_ptr cinfo, GSTREAM* stream) {
+static void gimex_stream_dest(j_compress_ptr cinfo, GSTREAM *stream)
+{
     struct gimex_destination_mgr *dst;
 
     if (cinfo->dest == NULL) {
         cinfo->dest = cinfo->mem->alloc_small((j_common_ptr)cinfo, 0, sizeof(struct gimex_destination_mgr));
     }
-    
+
     dst = (struct gimex_destination_mgr *)cinfo->dest;
     dst->pub.init_destination = gimex_init_destination;
     dst->pub.empty_output_buffer = gimex_empty_output_buffer;
@@ -248,7 +249,7 @@ static boolean JPG_markerparser(j_decompress_ptr cinfo)
 }
 
 /* Helper functions for parsing the JPEG file */
-void JPG_readcmyk(unsigned char *dst, const unsigned char *src)
+void JPG_readcmyk(uint8_t *dst, const uint8_t *src)
 {
     int c, m, y, k;
 
@@ -262,10 +263,10 @@ void JPG_readcmyk(unsigned char *dst, const unsigned char *src)
     dst[0] = -1 - y;
 }
 
-void JPG_readline(char *dst, const char *src, int width, J_COLOR_SPACE cspace, bool gimex_format)
+void JPG_readline(uint8_t *dst, const uint8_t *src, int width, J_COLOR_SPACE cspace, bool gimex_format)
 {
-    char *put_ptr = dst;
-    const char *get_ptr = src;
+    uint8_t *put_ptr = dst;
+    const uint8_t *get_ptr = src;
 
     if (gimex_format) {
         for (int i = 0; i < width; ++i) {
@@ -281,7 +282,7 @@ void JPG_readline(char *dst, const char *src, int width, J_COLOR_SPACE cspace, b
         memcpy(dst, src, width);
     } else if (cspace == JCS_CMYK) {
         for (int i = 0; i < width; ++i) {
-            char tmp[3];
+            uint8_t tmp[3];
             JPG_readcmyk(tmp, get_ptr);
             put_ptr[3] = -1;
             put_ptr[2] = tmp[0];
@@ -304,7 +305,7 @@ void JPG_readline(char *dst, const char *src, int width, J_COLOR_SPACE cspace, b
     }
 }
 
-void JPG_writeline(const char* src, char* dst, int width, J_COLOR_SPACE cspace, const GINFO *info)
+void JPG_writeline(const uint8_t *src, uint8_t *dst, int width, J_COLOR_SPACE cspace, const GINFO *info)
 {
     switch (cspace) {
         case JCS_GRAYSCALE:
@@ -350,6 +351,8 @@ void JPG_writeline(const char* src, char* dst, int width, J_COLOR_SPACE cspace, 
                 }
             }
             break;
+        default:
+            break;
     }
 }
 
@@ -360,7 +363,7 @@ int GIMEX_API JPG_is(GSTREAM *stream)
     uint32_t file_id;
 
     gseek(stream, 0);
-    
+
     if (gread(stream, &file_id, sizeof(file_id)) != sizeof(file_id)) {
         return 0;
     }
@@ -497,9 +500,9 @@ GINFO *GIMEX_API JPG_info(GINSTANCE *ctx, int frame)
 
             for (int i = 0; i != 256; ++i) {
                 info->colortbl[i].a = 255;
-                info->colortbl[i].r = (unsigned char)i;
-                info->colortbl[i].g = (unsigned char)i;
-                info->colortbl[i].b = (unsigned char)i;
+                info->colortbl[i].r = (uint8_t)i;
+                info->colortbl[i].g = (uint8_t)i;
+                info->colortbl[i].b = (uint8_t)i;
             }
         } else {
             info->bpp = 32;
@@ -547,7 +550,7 @@ int GIMEX_API JPG_read(GINSTANCE *ctx, GINFO *info, char *buffer, int pitch)
         jpeg_read_scanlines(&cinfo, row_buff, 1);
 
         if (i < info->height) {
-            JPG_readline(buffer, *row_buff, cinfo.output_width, cinfo.out_color_space, gimex_marker);
+            JPG_readline((uint8_t *)buffer, *row_buff, cinfo.output_width, cinfo.out_color_space, gimex_marker);
             buffer += pitch;
         }
     }
@@ -599,7 +602,7 @@ int GIMEX_API JPG_write(GINSTANCE *ctx, const GINFO *info, char *buffer, int pit
             cspace = JCS_GRAYSCALE;
         }
     }
-    
+
     cinfo.err = jpeg_std_error(&jerr.pub);
     jerr.pub.error_exit = gimex_error_exit;
 
@@ -634,7 +637,7 @@ int GIMEX_API JPG_write(GINSTANCE *ctx, const GINFO *info, char *buffer, int pit
     jpeg_start_compress(&cinfo, true);
 
     if ((info->sub_type & 1) != 0) {
-        jpeg_write_marker(&cinfo, JPEG_APP13, MARKER_CONST, sizeof(MARKER_CONST) - 1);
+        jpeg_write_marker(&cinfo, JPEG_APP13, (const JOCTET *)MARKER_CONST, sizeof(MARKER_CONST) - 1);
     }
 
     row_buff = galloc(width * bytes_per_pixel);
@@ -646,7 +649,7 @@ int GIMEX_API JPG_write(GINSTANCE *ctx, const GINFO *info, char *buffer, int pit
 
     for (unsigned i = 0; i < cinfo.image_height; ++i) {
         JSAMPROW row;
-        JPG_writeline(buffer, row_buff, width, cspace, info);
+        JPG_writeline((uint8_t *)buffer, row_buff, width, cspace, info);
         row = row_buff;
         jpeg_write_scanlines(&cinfo, &row, 1);
         buffer += pitch;

@@ -39,10 +39,10 @@ static void TGA_flipline(uint8_t *dst, int width, int bpp)
     }
 }
 
-static int TGA_readline(GINFO *info, char *dst, uint8_t *buffer, GSTREAM *stream)
+static int TGA_readline(GINFO *info, uint8_t *dst, uint8_t *buffer, GSTREAM *stream)
 {
     uint8_t *getp = buffer;
-    uint8_t *putp = (uint8_t *)dst;
+    uint8_t *putp = dst;
     int retval = 0;
     int32_t width = info->width;
     int32_t bpp = info->original_bpp;
@@ -176,8 +176,7 @@ static int TGA_readline(GINFO *info, char *dst, uint8_t *buffer, GSTREAM *stream
     } else {
         retval = gread(stream, getp, (width * ((bpp + 7) & ~7)) >> 3);
 
-        switch (bpp)
-        {
+        switch (bpp) {
             case 8:
                 for (int i = 0; i < width; ++i) {
                     *putp++ = *getp++;
@@ -250,7 +249,7 @@ static uint32_t TGA_pixelval(uint8_t *src, int size)
     return 0;
 }
 
-static uint8_t TGA_rlecount(uint8_t* src, int max_count, int pixel_size)
+static uint8_t TGA_rlecount(uint8_t *src, int max_count, int pixel_size)
 {
     uint8_t count = 0;
 
@@ -269,7 +268,8 @@ static uint8_t TGA_rlecount(uint8_t* src, int max_count, int pixel_size)
     return count;
 }
 
-static int TGA_writeline(uint8_t *src, uint8_t *dst, int width, int bpp, int src_bpp, char *grey_pal, int compress, int alpha_bits)
+static int TGA_writeline(
+    uint8_t *src, uint8_t *dst, int width, int bpp, int src_bpp, uint8_t *grey_pal, int compress, int alpha_bits)
 {
     uint8_t *getp = src;
     uint8_t *putp = dst;
@@ -435,7 +435,6 @@ static int TGA_writeline(uint8_t *src, uint8_t *dst, int width, int bpp, int src
             }
         }
     }
-    
 
     return putp - dst;
 }
@@ -772,11 +771,11 @@ int GIMEX_API TGA_read(GINSTANCE *ctx, GINFO *info, char *buffer, int pitch)
         if (i == 123) {
             offset = 0;
         }
-        retval = TGA_readline(info, putp, line_buffer, ctx->stream);
+        retval = TGA_readline(info, (uint8_t *)putp, line_buffer, ctx->stream);
 
         /* Handle column order of the image data */
         if (header.image_descriptor & 0x10) {
-            TGA_flipline(putp, width, bpp);
+            TGA_flipline((uint8_t *)putp, width, bpp);
         }
 
         putp += pitch;
@@ -828,7 +827,8 @@ int GIMEX_API TGA_write(GINSTANCE *ctx, const GINFO *info, char *buffer, int pit
         grey_scale = true;
 
         for (int i = 0; i < info->num_colors; ++i) {
-            if (info->colortbl[i].a != 0xFF || info->colortbl[i].r != info->colortbl[i].g || info->colortbl[i].r != info->colortbl[i].b) {
+            if (info->colortbl[i].a != 0xFF || info->colortbl[i].r != info->colortbl[i].g
+                || info->colortbl[i].r != info->colortbl[i].b) {
                 grey_scale = false;
             }
 
@@ -927,7 +927,8 @@ int GIMEX_API TGA_write(GINSTANCE *ctx, const GINFO *info, char *buffer, int pit
     if (info->height > 0) {
         char *getp = (buffer + pitch * (info->height - 1));
         for (int i = 0; i < info->height; ++i) {
-            int size = TGA_writeline(getp, line_buffer, info->width, bpp, info->bpp, grey_buff, info->packed, descriptor);
+            int size = TGA_writeline(
+                (uint8_t *)getp, line_buffer, info->width, bpp, info->bpp, grey_buff, info->packed, descriptor);
             retval = gwrite(ctx->stream, line_buffer, size);
             getp -= pitch;
         }

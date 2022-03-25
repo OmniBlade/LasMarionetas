@@ -25,7 +25,7 @@ extern "C" {
 #include <stdio.h>
 #define GIMEX_NOTIMPLEMENTED() \
     do { \
-    printf("%s, %d, Called '%s' which is not implemented\n", __FILE__, __LINE__, __CURRENT_FUNCTION__); \
+        printf("%s, %d, Called '%s' which is not implemented\n", __FILE__, __LINE__, __CURRENT_FUNCTION__); \
     } while (0)
 
 /* Original binary uses __stdcall so need to emulate that for msvc 32bit builds */
@@ -51,8 +51,7 @@ extern "C" {
 #define GIMEX_SHORTTYPESTR_SIZE 8
 #define GIMEX_WORDTYPESTR_SIZE 16
 #define GIMEX_LONGTYPESTR_SIZE 32
-#define GIMEX_ID(a, b, c, d) \
-    ((((int)(a)) << 24) | (((int)(b)) << 16) | (((int)(c)) << 8) | (int)(d))
+#define GIMEX_ID(a, b, c, d) ((((int)(a)) << 24) | (((int)(b)) << 16) | (((int)(c)) << 8) | (int)(d))
 
 /* Opaque file handle, exact definition defined by application */
 typedef struct GSTREAM GSTREAM;

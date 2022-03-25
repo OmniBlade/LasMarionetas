@@ -222,7 +222,7 @@ static int BMP_readline(GSTREAM *stream,
                     } else {
                         pixel = le32toh(*(uint32_t *)getp);
                     }
-                
+
                     if (a_mask) {
                         unsigned temp = (a_mask & pixel) >> aoffset;
                         if (acolors != 1) {
@@ -235,12 +235,9 @@ static int BMP_readline(GSTREAM *stream,
                         ((ARGB *)dst)->a = 255;
                     }
 
-                    ((ARGB *)dst)->r = (uint8_t)((((pixel & r_mask) >> roffset) * 255 + (rcolors >> 1))
-                        / (rcolors - 1));
-                    ((ARGB *)dst)->g = (uint8_t)((((pixel & g_mask) >> goffset) * 255 + (gcolors >> 1))
-                        / (gcolors - 1));
-                    ((ARGB *)dst)->b = (uint8_t)((((pixel & b_mask) >> boffset) * 255 + (bcolors >> 1))
-                        / (bcolors - 1));
+                    ((ARGB *)dst)->r = (uint8_t)((((pixel & r_mask) >> roffset) * 255 + (rcolors >> 1)) / (rcolors - 1));
+                    ((ARGB *)dst)->g = (uint8_t)((((pixel & g_mask) >> goffset) * 255 + (gcolors >> 1)) / (gcolors - 1));
+                    ((ARGB *)dst)->b = (uint8_t)((((pixel & b_mask) >> boffset) * 255 + (bcolors >> 1)) / (bcolors - 1));
                     dst += 4;
                     getp += bpp == 16 ? 2 : 4;
                 }
@@ -256,7 +253,7 @@ static int BMP_readline(GSTREAM *stream,
     return retval;
 }
 
-static int BMP_runcount(uint8_t* src, int32_t max_run)
+static int BMP_runcount(uint8_t *src, int32_t max_run)
 {
     int run = 0;
 
@@ -317,7 +314,7 @@ static int BMP_writeline(uint8_t *src,
                 /* Work out how far to the next run of same bytes */
                 int third_count;
 
-                for (first_count = 4; first_count < remaining && first_count < 254 ; first_count += 2) {
+                for (first_count = 4; first_count < remaining && first_count < 254; first_count += 2) {
                     second_count = BMP_runcount(getp + first_count, remaining - first_count);
                     third_count = BMP_runcount(getp + second_count, remaining - (first_count + second_count));
 
@@ -771,21 +768,21 @@ int GIMEX_API BMP_read(GINSTANCE *ctx, GINFO *info, char *buffer, int pitch)
     }
 
     if (header.bmp.height >= 0) {
-        uint8_t *putp = buffer + (pitch * (height - 1));
+        char *putp = buffer + (pitch * (height - 1));
         for (int y = 0; y < height; ++y) {
             if (retval != 0) {
-                retval =
-                    BMP_readline(ctx->stream, putp, line_buffer, bpp, info, alpha_mask, red_mask, green_mask, blue_mask);
+                retval = BMP_readline(
+                    ctx->stream, (uint8_t *)putp, line_buffer, bpp, info, alpha_mask, red_mask, green_mask, blue_mask);
             }
 
             putp -= pitch;
         }
     } else {
-        uint8_t *putp = buffer;
+        char *putp = buffer;
         for (int y = height; y > 0; --y) {
-            if(retval != 0) {
-                retval =
-                    BMP_readline(ctx->stream, putp, line_buffer, bpp, info, alpha_mask, red_mask, green_mask, blue_mask);
+            if (retval != 0) {
+                retval = BMP_readline(
+                    ctx->stream, (uint8_t *)putp, line_buffer, bpp, info, alpha_mask, red_mask, green_mask, blue_mask);
             }
 
             putp += pitch;
@@ -965,8 +962,17 @@ int GIMEX_API BMP_write(GINSTANCE *ctx, const GINFO *info, char *buffer, int pit
     if (line_buffer != NULL) {
         for (int y = 0; y < info->height; ++y) {
             /* Bitmaps are written bottom row first */
-            uint8_t *getp = buffer + (info->height - y - 1) * pitch;
-            dst_pitch = BMP_writeline(getp, line_buffer, width, bpp, info->sub_type, info->packed, alpha_bits, red_bits, green_bits, blue_bits);
+            char *getp = buffer + (info->height - y - 1) * pitch;
+            dst_pitch = BMP_writeline((uint8_t *)getp,
+                line_buffer,
+                width,
+                bpp,
+                info->sub_type,
+                info->packed,
+                alpha_bits,
+                red_bits,
+                green_bits,
+                blue_bits);
             data_size += dst_pitch;
         }
     }
@@ -1013,9 +1019,17 @@ int GIMEX_API BMP_write(GINSTANCE *ctx, const GINFO *info, char *buffer, int pit
     if (line_buffer != NULL) {
         for (int y = 0; y < info->height; ++y) {
             /* Bitmaps are written bottom row first */
-            uint8_t *getp = buffer + (info->height - y - 1) * pitch;
-            dst_pitch = BMP_writeline(
-                getp, line_buffer, width, bpp, info->sub_type, info->packed, alpha_bits, red_bits, green_bits, blue_bits);
+            char *getp = buffer + (info->height - y - 1) * pitch;
+            dst_pitch = BMP_writeline((uint8_t *)getp,
+                line_buffer,
+                width,
+                bpp,
+                info->sub_type,
+                info->packed,
+                alpha_bits,
+                red_bits,
+                green_bits,
+                blue_bits);
             retval = gwrite(ctx->stream, line_buffer, dst_pitch);
         }
     }

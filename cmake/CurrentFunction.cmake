@@ -26,10 +26,6 @@ if(NOT CURRENT_FUNCTION)
     else()
         set(CURRENT_FUNCTION __PRETTY_FUNCTION__)
     endif()
+    
+    add_compile_definitions(__CURRENT_FUNCTION__=${CURRENT_FUNCTION})
 endif()
-
-# Defines __CURRENT_FUNCTION__ to preferred compiler specific macro for target.
-function(target_current_function_define target)
-    message("Setting __CURRENT_FUNCTION__ macro for ${target} as ${CURRENT_FUNCTION}")
-    target_compile_definitions(${target} PRIVATE __CURRENT_FUNCTION__=${CURRENT_FUNCTION})
-endfunction()

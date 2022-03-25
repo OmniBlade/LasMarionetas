@@ -29,6 +29,7 @@ endif()
 find_package(PNG)
 
 if(NOT PNG_FOUND)
+    include(FetchContent)
     # Looks like we are building libpng ourselves, so we need zlib.
     find_package(ZLIB)
 
@@ -105,10 +106,8 @@ target_include_directories(gimex PUBLIC src include)
 target_link_libraries(gimex PRIVATE compat JPEG::JPEG PNG::PNG)
 target_compile_definitions(gimex PRIVATE -D_CRT_SECURE_NO_WARNINGS)
 
-include(CurrentFunction)
-target_current_function_define(gimex)
-
-
-add_executable(gimexconv src/gimexconv.c)
-target_link_libraries(gimexconv PRIVATE gimex compat)
-target_compile_definitions(gimexconv PRIVATE -D_CRT_SECURE_NO_WARNINGS)
+if(BUILD_CLIUTILS)
+    add_executable(gimexconv src/gimexconv.c)
+    target_link_libraries(gimexconv PRIVATE gimex compat)
+    target_compile_definitions(gimexconv PRIVATE -D_CRT_SECURE_NO_WARNINGS)
+endif()

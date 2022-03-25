@@ -1,0 +1,107 @@
+{
+    "version": 2,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 20,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "Default Config",
+            "generator": "Ninja",
+            "hidden": true,
+            "binaryDir": "${sourceDir}/build",
+            "cacheVariables": {
+                "BUILD_PEOPLEGAME": "ON",
+                "BUILD_CITYGAME": "ON",
+                "BUILD_PEOPLEEDITOR": "ON",
+                "BUILD_HOUSEEDITOR": "ON",
+                "BUILD_PLOTEDITOR": "ON",
+                "BUILD_PACKAGEINST": "ON",
+                "BUILD_PLUGIN": "ON",
+                "BUILD_TESTS": "ON",
+                "BUILD_CLIUTILS": "ON",
+                "STANDALONE": "ON"
+            }
+        },
+        {
+            "name": "default-win",
+            "inherits": "default",
+            "displayName": "MSVC defaults",
+            "hidden": true,
+            "cacheVariables": {
+                "CMAKE_EXE_LINKER_FLAGS_DEBUG": "/debug /INCREMENTAL:NO /DYNAMICBASE:NO /NXCOMPAT:NO",
+                "CMAKE_EXE_LINKER_FLAGS_RELWITHDEBINFO": "/debug /INCREMENTAL:NO",
+                "CMAKE_MODULE_LINKER_FLAGS_DEBUG": "/debug /INCREMENTAL:NO /DYNAMICBASE:NO /NXCOMPAT:NO",
+                "CMAKE_MODULE_LINKER_FLAGS_RELWITHDEBINFO": "/debug /INCREMENTAL:NO",
+                "CMAKE_SHARED_LINKER_FLAGS_DEBUG": "/debug /INCREMENTAL:NO /DYNAMICBASE:NO /NXCOMPAT:NO",
+                "CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO": "/debug /INCREMENTAL:NO",
+                "CMAKE_C_FLAGS_DEBUG": "/MDd /Zi /Ob0 /Od",
+                "CMAKE_CXX_FLAGS_DEBUG": "/MDd /Zi /Ob0 /Od",
+                "CMAKE_CXX_FLAGS_RELEASE": "/MD /Zi /O2 /Ob2 /DNDEBUG",
+                "CMAKE_EXE_LINKER_FLAGS_RELEASE": "/debug:full /INCREMENTAL:NO",
+                "CMAKE_MODULE_LINKER_FLAGS_RELEASE": "/debug:full /INCREMENTAL:NO",
+                "CMAKE_SHARED_LINKER_FLAGS_RELEASE": "/debug:full /INCREMENTAL:NO"
+            }
+        },
+        {
+            "name": "cl",
+            "inherits": "default-win",
+            "displayName": "MSVC CL build",
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "/DWIN32 /D_WINDOWS /GR /EHsc",
+                "MARIONETAS_CXX_FLAGS": "/Zc:strictStrings;/W3;/wd4820;/wd4100;/wd4464;/wd4996;/wd4514"
+            }
+        },
+        {
+            "name": "msvc2019-i686",
+            "inherits": "cl",
+            "displayName": "MSVC 32bit build",
+            "generator": "Visual Studio 16 2019",
+            "architecture": "Win32",
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "/MP2 /DWIN32 /D_WINDOWS /GR /EHsc"
+            }
+        },
+        {
+            "name": "msvc2019-x86-64",
+            "inherits": "cl",
+            "displayName": "MSVC 64bit build",
+            "architecture": "x64",
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS": "/MP2 /DWIN32 /D_WINDOWS /GR /EHsc"
+            }
+        },
+        {
+            "name": "default-unix",
+            "inherits": "default",
+            "hidden": true,
+            "displayName": "UNIX defaults",
+            "cacheVariables": {
+                "CMAKE_CXX_FLAGS_DEBUG": "-g3 -Og -gsplit-dwarf",
+                "CMAKE_C_FLAGS_DEBUG": "-g3 -Og -gsplit-dwarf",
+                "CMAKE_CXX_FLAGS_RELEASE": "-O3 -g3 -DNDEBUG",
+                "CMAKE_C_FLAGS_RELEASE": "-O3 -g3 -DNDEBUG"
+            }
+        },
+        {
+            "name": "gcc",
+            "inherits": "default-unix",
+            "displayName": "GCC build",
+            "environment": {
+                "CC": "gcc",
+                "CXX": "g++"
+            }
+        },
+        {
+            "name": "clang",
+            "inherits": "default-unix",
+            "displayName": "Clang build",
+            "environment": {
+                "CC": "clang",
+                "CXX": "clang++"
+            }
+        }
+    ]
+}

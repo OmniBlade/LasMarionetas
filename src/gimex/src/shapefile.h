@@ -20,7 +20,7 @@ extern "C" {
 #include <stdbool.h>
 #endif
 
-#pragma pack(push,1)
+#pragma pack(push, 1)
 typedef struct _SHAPEHEADER
 {
     uint32_t mnFourCC;
