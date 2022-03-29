@@ -44,8 +44,11 @@ set(FRAMEWORK_SRC
     gz/igzmessagetarget2.h
     gz/igzostream.h
     gz/igzpersistdbrecord.h
+    gz/igzpersistdbsegment.h
     gz/igzpersistresource.h
+    gz/igzpersistresourcekeyfilter.h
     gz/igzpersistresourcefactory.h
+    gz/igzpersistdbserialrecord.h
     gz/igzserializable.h
     gz/igzstring.h
     gz/igzsystemservice.h

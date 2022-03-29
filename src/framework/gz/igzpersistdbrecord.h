@@ -21,9 +21,24 @@ class cGZPersistResourceKey;
 class cIGZPersistDBRecord : public cIGZUnknown
 {
 public:
+    /**
+     * @return The cGZPersistResourceKey for this record.
+     */
     virtual const cGZPersistResourceKey &GetKey() const = 0;
-    virtual uint32_t SetKey(cGZPersistResourceKey const &key) = 0;
+    /**
+     * @brief Set the cGZPersistResourceKey for this record.
+     */
+    virtual void SetKey(cGZPersistResourceKey const &key) = 0;
+    /**
+     * @return Access flags for this record.
+     */
     virtual uint32_t GetAccessFlags() const = 0; // Not 100% sure on this return type.
+    /**
+     * @return Was the record closed successfully?
+     */
     virtual bool Close() = 0;
+    /**
+     * @return Was the record aborted successfully?
+     */
     virtual bool Abort() = 0;
 };
