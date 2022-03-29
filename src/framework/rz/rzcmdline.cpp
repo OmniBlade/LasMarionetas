@@ -94,7 +94,9 @@ const char *cRZCmdLine::ArgV(int32_t index) const
 
 bool cRZCmdLine::GetCommandLineText(cIGZString &cmd_line) const
 {
-    return cmd_line.Copy(mzCmdLineText);
+    cmd_line.Copy(mzCmdLineText);
+
+    return true;
 }
 
 int32_t cRZCmdLine::Find(const cIGZString &text, bool case_sensitive) const

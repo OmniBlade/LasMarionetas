@@ -42,8 +42,8 @@ public:
     virtual uint32_t AddRef() override;
     virtual uint32_t Release() override;
 
-    virtual uint32_t FromChar(const char *pszSource) override;
-    virtual uint32_t FromChar(const char *pszSource, uint32_t dwLength) override;
+    virtual void FromChar(const char *pszSource) override;
+    virtual void FromChar(const char *pszSource, uint32_t dwLength) override;
     virtual const char *ToChar() const override;
     virtual const char *Data() const override;
 
@@ -61,8 +61,8 @@ public:
 
     virtual cIGZString &operator=(const cIGZString &szOther) override;
 
-    virtual int32_t Copy(const cIGZString &szOther) override;
-    virtual int32_t Resize(uint32_t dwNewSize) override;
+    virtual void Copy(const cIGZString &szOther) override;
+    virtual void Resize(uint32_t dwNewSize) override;
 
     virtual cIGZString *Append(const char *pszOther) override;
     virtual cIGZString *Append(const char *pszOther, uint32_t dwLength) override;

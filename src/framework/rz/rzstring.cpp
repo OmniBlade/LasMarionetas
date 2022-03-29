@@ -71,26 +71,22 @@ uint32_t cRZString::Release()
     return mnRefCount;
 }
 
-uint32_t cRZString::FromChar(const char *pszSource)
+void cRZString::FromChar(const char *pszSource)
 {
     if (pszSource == nullptr) {
         erase();
     } else {
         assign(pszSource);
     }
-
-    return true;
 }
 
-uint32_t cRZString::FromChar(const char *pszSource, uint32_t dwLength)
+void cRZString::FromChar(const char *pszSource, uint32_t dwLength)
 {
     if (pszSource == nullptr) {
         erase();
     } else {
         assign(pszSource, dwLength);
     }
-
-    return true;
 }
 
 const char *cRZString::ToChar() const
@@ -201,15 +197,14 @@ cIGZString &cRZString::operator=(const cIGZString &szOther)
     return *this;
 }
 
-int32_t cRZString::Copy(const cIGZString &szOther)
+void cRZString::Copy(const cIGZString &szOther)
 {
-    return FromChar(szOther.Data(), szOther.Strlen());
+    FromChar(szOther.Data(), szOther.Strlen());
 }
 
-int32_t cRZString::Resize(uint32_t dwNewSize)
+void cRZString::Resize(uint32_t dwNewSize)
 {
     resize(dwNewSize);
-    return 1;
 }
 
 cIGZString *cRZString::Append(const char *pszOther)

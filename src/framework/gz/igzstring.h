@@ -25,16 +25,14 @@ public:
     /**
      * @brief Populates object with string data.
      * @param pszSource A pointer to a null terminated C string.
-     * @return Unclear if this is supposed to return.
      */
-    virtual uint32_t FromChar(const char *pszSource) = 0;
+    virtual void FromChar(const char *pszSource) = 0;
     /**
      * @brief Populates object with string data.
      * @param pszSource A pointer to string data.
      * @param dwLength Number of bytes to use from the string.
-     * @return Unclear if this is supposed to return.
      */
-    virtual uint32_t FromChar(const char *pszSource, uint32_t dwLength) = 0;
+    virtual void FromChar(const char *pszSource, uint32_t dwLength) = 0;
     /**
      * @brief Fetches a pointer to the string data.
      * @return A pointer to const char data.
@@ -115,15 +113,13 @@ public:
     /**
      * @brief Makes this string object a copy of another.
      * @param szOther A reference to an const cIGZString object.
-     * @return None zero if the copy succeeded.
      */
-    virtual int32_t Copy(const cIGZString &szOther) = 0;
+    virtual void Copy(const cIGZString &szOther) = 0;
     /**
      * @brief Resize the underlying buffer for the string.
      * @param dwNewSize Length to be resized to.
-     * @return None zero if the resize succeeded.
      */
-    virtual int32_t Resize(uint32_t dwNewSize) = 0;
+    virtual void Resize(uint32_t dwNewSize) = 0;
     /**
      * @brief Appends a string onto the end of the current one.
      * @param pszOther A pointer to string data.
