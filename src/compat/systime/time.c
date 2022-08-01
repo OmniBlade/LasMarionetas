@@ -52,7 +52,7 @@ int gettimeofday(struct timeval *tp, void *tzp)
 
     if (getntptimeofday(&t, (struct timezone *)tzp))
         return -1;
-    tp->tv_sec = (long)t.tv_sec;
+    tp->tv_sec = t.tv_sec;
     tp->tv_usec = (t.tv_nsec / 1000);
     return 0;
 }

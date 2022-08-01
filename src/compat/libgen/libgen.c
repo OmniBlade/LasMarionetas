@@ -18,7 +18,7 @@
  * however caused, resulting from the use of this software.
  *
  */
-#define _CRT_NONSTDC_NO_DEPRECATE
+
 #include <libgen.h>
 #include <locale.h>
 #include <stdio.h>

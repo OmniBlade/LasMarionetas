@@ -71,6 +71,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 # Check for threading, win32 or posix.
 find_package(Threads)
 
+if(BUILD_PLUGIN)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif()
+
 # Build lasmarionetas
 add_subdirectory(src)
 

@@ -43,7 +43,7 @@ extern "C" {
 #endif /* _INC_DIRECT */
 
 #ifndef _INC_PROCESS
-#include <process.h> /* _execl() */
+#include <process.h> /* _execl() _getpid() */
 #endif /* _INC_PROCESS */
 
 #include <sys/stat.h> /* */
@@ -123,6 +123,10 @@ int __cdecl minipos_open(char const *_FileName, int _OpenFlag, ...);
 #ifndef execpp
 #define execpp _execpp
 #endif /* execpp */
+
+#ifndef getpid
+#define getpid _getpid
+#endif /* getpid */
 
 #ifndef rmdir
 int __cdecl minipos_rmdir(char const *_Path);

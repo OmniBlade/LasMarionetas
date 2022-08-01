@@ -1,5 +1,4 @@
 # Dependency libs needed to build the engine.
-add_subdirectory(miniposix)
 add_subdirectory(compat)
 add_subdirectory(gimex)
 
@@ -44,6 +43,6 @@ endif()
 
 # A demo "plugin" dll that can extend a game without needing code injection.
 # Can only be made to work for the actual games without code injection, not the editors.
-if(PLUGIN)
+if(BUILD_PLUGIN)
     add_subdirectory(plugin)
 endif()

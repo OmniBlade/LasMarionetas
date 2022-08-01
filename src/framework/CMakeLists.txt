@@ -79,7 +79,7 @@ set(FRAMEWORK_SRC
     unichar.h
 )
 
-set(FRAMEWORK_LIBS compat gimex miniposix)
+set(FRAMEWORK_LIBS compat gimex)
 
 if(WIN32 OR "${CMAKE_SYSTEM}" MATCHES "Windows")
     # Add thread releated implementations.
