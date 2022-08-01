@@ -39,6 +39,7 @@ set(FRAMEWORK_SRC
     gz/igzframeworkw32.h
     gz/igzgraphicsystem.h
     gz/igzistream.h
+    gz/igzkeyboard.h
     gz/igzmessageserver.h
     gz/igzmessagetarget.h
     gz/igzmessagetarget2.h
