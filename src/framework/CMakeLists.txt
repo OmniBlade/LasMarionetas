@@ -46,6 +46,7 @@ set(FRAMEWORK_SRC
     gz/igzostream.h
     gz/igzpersistdbrecord.h
     gz/igzpersistdbsegment.h
+    gz/igzpersistdbsegmentdirectoryfiles.h
     gz/igzpersistresource.h
     gz/igzpersistresourcekeyfilter.h
     gz/igzpersistresourcefactory.h
