@@ -20,11 +20,22 @@ if (NOT GTest_FOUND)
     endif()
 endif()
 
-add_executable(test_lasmarionetas test_rzcmdline.cpp test_rzrandom.cpp)
-target_link_libraries(test_lasmarionetas GTest::gtest GTest::gtest_main)
-target_compile_definitions(test_lasmarionetas PRIVATE -DTESTDATA_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data")
+FetchContent_Declare(
+    canterburycorpus
+    GIT_REPOSITORY https://github.com/pfalcon/canterbury-corpus.git
+    GIT_TAG        c380ef9dc1dc62691757fdfeebdc2f85710e1e46
+)
 
-target_link_libraries(test_lasmarionetas gzframework)
+FetchContent_GetProperties(canterburycorpus)
+if(NOT zlib_POPULATED)
+    FetchContent_Populate(canterburycorpus)
+endif()
+
+add_executable(test_lasmarionetas test_rzcmdline.cpp test_rzrandom.cpp test_codex.cpp)
+target_link_libraries(test_lasmarionetas GTest::gtest GTest::gtest_main)
+target_compile_definitions(test_lasmarionetas PRIVATE -DTESTDATA_PATH="${canterburycorpus_SOURCE_DIR}")
+
+target_link_libraries(test_lasmarionetas gzframework codex)
 
 include(GoogleTest)
 gtest_discover_tests(test_lasmarionetas)

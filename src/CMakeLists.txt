@@ -1,5 +1,6 @@
 # Dependency libs needed to build the engine.
 add_subdirectory(compat)
+add_subdirectory(codex)
 add_subdirectory(gimex)
 
 # A fake d3d9.dll that injects a custom dll into the game related binaries.
