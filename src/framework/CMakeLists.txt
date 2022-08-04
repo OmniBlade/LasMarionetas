@@ -75,6 +75,8 @@ set(FRAMEWORK_SRC
     rz/rzstring.cpp
     rz/rzstring.h
     rz/rzsysservptr.h
+    rz/rzsystemservice.cpp
+    rz/rzsystemservice.h
     rz/rzthreadsafe.cpp
     rz/rzthreadsafe.h
     rz/rztime.cpp
