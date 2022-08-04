@@ -79,6 +79,8 @@ set(FRAMEWORK_SRC
     rz/rzthreadsafe.h
     rz/rztime.cpp
     rz/rztime.h
+    rz/rzunknownmt.cpp
+    rz/rzunknownmt.h
     unichar.h
 )
 
