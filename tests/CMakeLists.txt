@@ -31,7 +31,12 @@ if(NOT zlib_POPULATED)
     FetchContent_Populate(canterburycorpus)
 endif()
 
-add_executable(test_lasmarionetas test_rzcmdline.cpp test_rzrandom.cpp test_codex.cpp)
+add_executable(test_lasmarionetas
+    test_codex.cpp
+    test_rzcmdline.cpp
+    test_rzrandom.cpp
+    test_rztimer.cpp
+)
 target_link_libraries(test_lasmarionetas GTest::gtest GTest::gtest_main)
 target_compile_definitions(test_lasmarionetas PRIVATE -DTESTDATA_PATH="${canterburycorpus_SOURCE_DIR}")
 

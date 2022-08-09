@@ -72,6 +72,7 @@ set(FRAMEWORK_SRC
     rz/rzrandomsuper.cpp
     rz/rzrandomsuper.h
     rz/rzrect.h
+    rz/rzsleep.h
     rz/rzstring.cpp
     rz/rzstring.h
     rz/rzsysservptr.h
@@ -81,6 +82,8 @@ set(FRAMEWORK_SRC
     rz/rzthreadsafe.h
     rz/rztime.cpp
     rz/rztime.h
+    rz/rztimer.cpp
+    rz/rztimer.h
     rz/rzunknownmt.cpp
     rz/rzunknownmt.h
     unichar.h
@@ -93,6 +96,7 @@ if(WIN32 OR "${CMAKE_SYSTEM}" MATCHES "Windows")
     if(Threads_FOUND)
         list(APPEND FRAMEWORK_SRC rz/rzcriticalsection_win32.cpp)
     endif()
+    list(APPEND FRAMEWORK_DEFINITIONS NOMINMAX)
 else()
     # Add thread releated implementations.
     if(Threads_FOUND)
@@ -101,14 +105,13 @@ else()
     endif()
 endif()
 
-file(GLOB_RECURSE FRAMEWORK_HEADERS "*.h")
-
 if(STANDALONE OR PLUGIN OR BUILD_TESTS)
     add_library(gzframework STATIC ${FRAMEWORK_SRC})
     target_include_directories(gzframework PUBLIC ${FRAMEWORK_INCLUDES})
     add_dependencies(gzframework check_git)
     target_link_libraries(gzframework PUBLIC ${FRAMEWORK_LIBS})
     target_compile_features(gzframework PUBLIC cxx_std_17) # Pass the required standard down.
+    target_compile_definitions(gzframework PUBLIC ${FRAMEWORK_DEFINITIONS})
 endif()
 
 # DLL builds expose any globals as a reference that the injectable dll builds provide hooks against.
@@ -121,7 +124,7 @@ if(DLLBUILD)
         # Note that this limits us to mostly C++98 level STL features.
         target_include_directories(gzframework_people PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty/stlport ${FRAMEWORK_INCLUDES} hooks)
         add_dependencies(gzframework_people check_git)
-        target_compile_definitions(gzframework_people PUBLIC DLL_BUILD MATCH_ABI)
+        target_compile_definitions(gzframework_people PUBLIC ${FRAMEWORK_DEFINITIONS} DLL_BUILD MATCH_ABI)
         target_link_libraries(gzframework_people PUBLIC ${FRAMEWORK_LIBS})
         target_compile_features(gzframework_people PUBLIC cxx_std_17) # Pass the required standard down.
     endif()
@@ -133,7 +136,7 @@ if(DLLBUILD)
         # Note that this limits us to mostly C++98 level STL features.
         target_include_directories(gzframework_house PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty/stlport ${FRAMEWORK_INCLUDES} hooks)
         add_dependencies(gzframework_house check_git)
-        target_compile_definitions(gzframework_house PUBLIC DLL_BUILD MATCH_ABI USE_HOUSE_ABI)
+        target_compile_definitions(gzframework_house PUBLIC ${FRAMEWORK_DEFINITIONS} DLL_BUILD MATCH_ABI USE_HOUSE_ABI)
         target_link_libraries(gzframework_house PUBLIC ${FRAMEWORK_LIBS})
         target_compile_features(gzframework_house PUBLIC cxx_std_17) # Pass the required standard down.
     endif()
@@ -145,7 +148,7 @@ if(DLLBUILD)
         # Note that this limits us to mostly C++98 level STL features.
         target_include_directories(gzframework_city PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty/stlport ${FRAMEWORK_INCLUDES} hooks)
         add_dependencies(gzframework_city check_git)
-        target_compile_definitions(gzframework_city PUBLIC DLL_BUILD MATCH_ABI USE_CITY_ABI)
+        target_compile_definitions(gzframework_city PUBLIC ${FRAMEWORK_DEFINITIONS} DLL_BUILD MATCH_ABI USE_CITY_ABI)
         target_link_libraries(gzframework_city PUBLIC ${FRAMEWORK_LIBS})
         target_compile_features(gzframework_city PUBLIC cxx_std_17) # Pass the required standard down.
     endif()
