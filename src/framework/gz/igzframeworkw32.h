@@ -13,19 +13,18 @@
 #pragma once
 
 #include "igzunknown.h"
-#include <windows.h>
 
-static constexpr uint32_t GZIID_cIGZFrameWorkW32 = 0x23EA70A1;
+static constexpr uint32_t GZIID_cIGZFrameworkW32 = 0x23EA70A1;
 
-class cIGZFrameWork;
+class cIGZFramework;
 
-class cIGZFrameWorkW32 : public cIGZUnknown
+class cIGZFrameworkW32 : public cIGZUnknown
 {
 public:
     /**
      * @return Returns a pointer to the class using the cIZGFrameWork derived interface.
      */
-    virtual cIGZFrameWork *AsIGZFrameWork() = 0;
+    virtual cIGZFramework *AsIGZFrameWork() = 0;
     /**
      * @return Returns the windows instance of the application.
      */

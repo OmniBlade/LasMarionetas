@@ -1,0 +1,55 @@
+-- GZCOM Framework Directors --
+cFreshnessCOMDirector
+cGZCOMDirector
+nGZCommandParser::cDllCOMDirector
+cGZDrawCOMDirector
+nGZEvent::cEventCOMDirector
+cGZExpatCOMDirector
+cFontCOMDirector
+cGXCOMDirector
+nGZGraphic4::cDllCOMDirector
+nGZGraphic4::cDraw2DDLLCOMDirector
+cGZLua5COMDirector
+cGZMadCowCOMDirector
+cGZResManCOMDirector
+cGZResourceCOMDirectorW32
+nGZSceneDBAnim::cDllCOMDirector
+nGZSceneGraph::cDllCOMDirector
+cGZScriptCOMDirector
+cGZSndEaCOMDirector
+cGZSoundCOMDirector
+cGZSpeexCodecCOMDirector
+cGZUIScriptCOMDirector
+cGZWinCOMDirector
+cGZWin32COMDirector
+cGZXmlUtilsCOMDirector
+cHitManCOMDirector
+cHitMp3mlDecodedllCOMDirector
+nPathPlanner::cPathPlanCOMDirector
+cRZMessageCOMDirector
+nGZCompGeom::cDllCOMDirector
+nGZNumerics::cDllCOMDirector
+cGZToolsCOMDirector - Seen only in Body Shop?
+
+-- The Sims 2 Directors --
+cTSAppFWCOMDirector - top level director
+cTSAudioCOMDirector
+cTSCASCOMDirector - shared
+cTSCommonCOMDirector - shared
+cTSEffectsCOMDirector
+nTSMetaData::cCOMDirector:
+cTSPersistCOMDirector - shared
+nTSSG::cDllCOMDirector
+cTSSimCOMDirector
+cTSUICOMDirector
+cTSUICommonCOMDirector - shared
+cTSWebCOMDirector
+nTSWorld::cDllCOMDirector
+cTSTestDCOMDirector
+
+-- Body Shop Directors --
+nLasie::cLSAppFWCOMDirector - top level director
+cTSCASCOMDirector - shared
+cTSCommonCOMDirector - shared
+cTSPersistCOMDirector - shared
+cTSUICommonCOMDirector - shared

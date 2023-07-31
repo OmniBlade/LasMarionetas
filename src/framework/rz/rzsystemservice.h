@@ -77,14 +77,14 @@ public:
      * @brief A callback for each active tick when the game is focused.
      *
      * The service must be registered to receive active tick callbacks via
-     * cIGZFrameWork::AddToTick(cIGZSystemService* service)
+     * cIGZFramework::AddToTick(cIGZSystemService* service)
      */
     virtual bool OnTick() override;
     /**
      * @brief A callback for each idle tick when the game is not focused
      *
      * The service must be registered to receive idle tick callbacks via
-     * cIGZFrameWork::AddToOnIdle(cIGZSystemService* service)
+     * cIGZFramework::AddToOnIdle(cIGZSystemService* service)
      */
     virtual bool OnIdle() override;
     /**

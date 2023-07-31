@@ -109,6 +109,7 @@ const char *Get_Payload_Name()
     static const ExePayloads Payloads[] = {
         { "3772f5c1327a35f2528afbe055f5d9682d04d93b", "marionetas.dll" },
         { "1f11aa9d795252e73cbecd74956fbbd7eeb8aec1", "marionetas.dll" },
+        { "4ece9f371915898c7acbbe95970bd49ca6201f1b", "marionetas.dll" },
         { "454e07bf85d47b67e5231af1cb7c42a805da2fcc", "tienda.dll" },
         { "b30e3e9f29da5638bd9f116a3252aa91bf875df1", "pkginstall.dll" },
         { "bd78cc528d87df94653c0dcfe33ae45b11b8271f", "constructor.dll" },

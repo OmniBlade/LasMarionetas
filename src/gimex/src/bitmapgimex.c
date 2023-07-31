@@ -64,6 +64,7 @@ static int BMP_readline(GSTREAM *stream,
     int retval = 0;
     int run_count = 0;
     int pitch;
+    int i;
 
     if (info->packed != 0) {
         int xpos = 0;
@@ -81,12 +82,12 @@ static int BMP_readline(GSTREAM *stream,
 
                 switch (bpp) {
                     case 1:
-                        for (int i = 0; i < run_count; ++i) {
+                        for (i = 0; i < run_count; ++i) {
                             *dst++ = (*getp >> (7 - (i & 7))) & 1;
                         }
                         break;
                     case 4:
-                        for (int i = 0; i < run_count; ++i) {
+                        for (i = 0; i < run_count; ++i) {
                             if ((i & 1) != 0) {
                                 *dst++ = *getp & 0xF;
                             } else {
@@ -95,14 +96,14 @@ static int BMP_readline(GSTREAM *stream,
                         }
                         break;
                     case 8:
-                        for (int i = 0; i < run_count; ++i) {
+                        for (i = 0; i < run_count; ++i) {
                             *dst++ = *getp;
                         }
                         break;
                     case 24:
                         gread(stream, getp + 1, 2);
                         bytes_read += 2;
-                        for (int i = 0; i < run_count; ++i) {
+                        for (i = 0; i < run_count; ++i) {
                             ((ARGB *)dst)->a = 255;
                             ((ARGB *)dst)->r = getp[2];
                             ((ARGB *)dst)->g = getp[1];
@@ -123,12 +124,12 @@ static int BMP_readline(GSTREAM *stream,
 
                     switch (bpp) {
                         case 1:
-                            for (int i = 0; i < run_count; ++i) {
+                            for (i = 0; i < run_count; ++i) {
                                 *dst++ = (*getp++ >> (7 - (i & 7))) & 1;
                             }
                             break;
                         case 4:
-                            for (int i = 0; i < run_count; ++i) {
+                            for (i = 0; i < run_count; ++i) {
                                 if (i & 1) {
                                     *dst++ = *getp++ & 0xF;
                                 } else {
@@ -137,12 +138,12 @@ static int BMP_readline(GSTREAM *stream,
                             }
                             break;
                         case 8:
-                            for (int i = 0; i < run_count; ++i) {
+                            for (i = 0; i < run_count; ++i) {
                                 *dst++ = *getp++;
                             }
                             break;
                         case 24:
-                            for (int i = 0; i < run_count; ++i) {
+                            for (i = 0; i < run_count; ++i) {
                                 ((ARGB *)dst)->a = 255;
                                 ((ARGB *)dst)->r = getp[2];
                                 ((ARGB *)dst)->g = getp[1];
@@ -165,7 +166,7 @@ static int BMP_readline(GSTREAM *stream,
 
         switch (bpp) {
             case 1:
-                for (int i = 0; i < run_count; ++i) {
+                for (i = 0; i < run_count; ++i) {
                     *dst++ = (*getp >> (7 - (i & 7))) & 1;
 
                     if ((i & 7) == 7) {
@@ -174,7 +175,7 @@ static int BMP_readline(GSTREAM *stream,
                 }
                 break;
             case 4:
-                for (int i = 0; i < run_count; ++i) {
+                for (i = 0; i < run_count; ++i) {
                     if (i & 1) {
                         *dst++ = *getp++ & 0xF;
                     } else {
@@ -183,12 +184,12 @@ static int BMP_readline(GSTREAM *stream,
                 }
                 break;
             case 8:
-                for (int i = 0; i < run_count; ++i) {
+                for (i = 0; i < run_count; ++i) {
                     *dst++ = *getp++;
                 }
                 break;
             case 24:
-                for (int i = 0; i < run_count; ++i) {
+                for (i = 0; i < run_count; ++i) {
                     ((ARGB *)dst)->a = 255;
                     ((ARGB *)dst)->r = getp[2];
                     ((ARGB *)dst)->g = getp[1];
@@ -214,7 +215,7 @@ static int BMP_readline(GSTREAM *stream,
                 goffset = BMP_maskoffset(g_mask);
                 boffset = BMP_maskoffset(b_mask);
 
-                for (int i = 0; i < run_count; ++i) {
+                for (i = 0; i < run_count; ++i) {
                     uint32_t pixel;
 
                     if (bpp != 32) {
@@ -279,6 +280,7 @@ static int BMP_writeline(uint8_t *src,
     int32_t g_bits,
     int32_t b_bits)
 {
+    int i;
     uint8_t *getp = src;
     uint8_t *putp = dst;
 
@@ -352,7 +354,7 @@ static int BMP_writeline(uint8_t *src,
         *putp++ = 0;
         *putp++ = 0;
     } else { /* Uncompressed data */
-        for (int i = 0; i < width; ++i) {
+        for (i = 0; i < width; ++i) {
             switch (bpp) {
                 case 32:
                 case 16: {
@@ -429,7 +431,7 @@ int GIMEX_API BMP_is(GSTREAM *stream)
 {
     BITMAPFILEHEADER header;
 
-    gseek(stream, 0);
+    gseek(stream, 0, GSEEK_SET);
 
     if (gread(stream, &header, sizeof(header.type)) && le16toh(header.type) == BF_TYPE) {
         return 100;
@@ -498,8 +500,9 @@ GINFO *GIMEX_API BMP_info(GINSTANCE *ctx, int frame)
     uint32_t alpha_mask = 0;
     int32_t type = BMP_UNKNOWN;
     int32_t compression = BI_RGB;
+    unsigned i;
 
-    gseek(ctx->stream, 0);
+    gseek(ctx->stream, 0, GSEEK_SET);
     memset(&header, 0, sizeof(header));
 
     /* Get file header and size of bitmap header */
@@ -599,7 +602,7 @@ GINFO *GIMEX_API BMP_info(GINSTANCE *ctx, int frame)
                         return NULL;
                     }
 
-                    for (unsigned i = 0; i < colors; ++i) {
+                    for (i = 0; i < colors; ++i) {
                         info->colortbl[i].a = 255;
                         info->colortbl[i].r = pal[i * 3 + 2];
                         info->colortbl[i].g = pal[i * 3 + 1];
@@ -614,7 +617,7 @@ GINFO *GIMEX_API BMP_info(GINSTANCE *ctx, int frame)
                         return NULL;
                     }
 
-                    for (unsigned i = 0; i < colors; ++i) {
+                    for (i = 0; i < colors; ++i) {
                         info->colortbl[i].a = pal[i * 4 + 3];
                         info->colortbl[i].r = pal[i * 4 + 2];
                         info->colortbl[i].g = pal[i * 4 + 1];
@@ -630,7 +633,7 @@ GINFO *GIMEX_API BMP_info(GINSTANCE *ctx, int frame)
                     }
 
                     if (no_alpha) {
-                        for (unsigned i = 0; i < colors; i++) {
+                        for (i = 0; i < colors; i++) {
                             info->colortbl[i].a = 255;
                         }
 
@@ -674,12 +677,10 @@ int GIMEX_API BMP_read(GINSTANCE *ctx, GINFO *info, char *buffer, int pitch)
 {
     BITMAPHEADER header;
     uint8_t *line_buffer = NULL;
-    uint32_t header_size = 0;
     int32_t width = 0;
     int32_t height = 0;
     int32_t bpp = 0;
     int32_t actual_bpp = 0;
-    int32_t ppm = 0;
     uint32_t colors = 0;
     uint32_t red_mask = 0;
     uint32_t green_mask = 0;
@@ -689,6 +690,7 @@ int GIMEX_API BMP_read(GINSTANCE *ctx, GINFO *info, char *buffer, int pitch)
     int32_t compression = BI_RGB;
     int32_t offset;
     int retval = 0;
+    int y;
 
     colors = info->num_colors;
     type = info->sub_type;
@@ -696,7 +698,7 @@ int GIMEX_API BMP_read(GINSTANCE *ctx, GINFO *info, char *buffer, int pitch)
     width = info->width;
     height = info->height;
 
-    gseek(ctx->stream, 0);
+    gseek(ctx->stream, 0, GSEEK_SET);
 
     /* Read required info from header, either core for older formats or the info header */
     if (!gread(ctx->stream,
@@ -759,7 +761,7 @@ int GIMEX_API BMP_read(GINSTANCE *ctx, GINFO *info, char *buffer, int pitch)
         }
     }
 
-    retval = gseek(ctx->stream, offset);
+    retval = gseek(ctx->stream, offset, GSEEK_SET);
     actual_bpp = bpp != 15 ? bpp : 16;
     line_buffer = galloc(((width * actual_bpp + 31) & ~31) >> 3);
 
@@ -769,7 +771,7 @@ int GIMEX_API BMP_read(GINSTANCE *ctx, GINFO *info, char *buffer, int pitch)
 
     if (header.bmp.height >= 0) {
         char *putp = buffer + (pitch * (height - 1));
-        for (int y = 0; y < height; ++y) {
+        for (y = 0; y < height; ++y) {
             if (retval != 0) {
                 retval = BMP_readline(
                     ctx->stream, (uint8_t *)putp, line_buffer, bpp, info, alpha_mask, red_mask, green_mask, blue_mask);
@@ -779,7 +781,7 @@ int GIMEX_API BMP_read(GINSTANCE *ctx, GINFO *info, char *buffer, int pitch)
         }
     } else {
         char *putp = buffer;
-        for (int y = height; y > 0; --y) {
+        for (y = height; y > 0; --y) {
             if (retval != 0) {
                 retval = BMP_readline(
                     ctx->stream, (uint8_t *)putp, line_buffer, bpp, info, alpha_mask, red_mask, green_mask, blue_mask);
@@ -812,6 +814,8 @@ int GIMEX_API BMP_write(GINSTANCE *ctx, const GINFO *info, char *buffer, int pit
     int32_t blue_bits = 0;
     int32_t num_colors = info->num_colors;
     int retval = 0;
+    int i;
+    int y;
 
     width = info->width;
     height = info->height;
@@ -960,7 +964,7 @@ int GIMEX_API BMP_write(GINSTANCE *ctx, const GINFO *info, char *buffer, int pit
 
     /* We do this once here to work out image size, then again to write it out */
     if (line_buffer != NULL) {
-        for (int y = 0; y < info->height; ++y) {
+        for (y = 0; y < info->height; ++y) {
             /* Bitmaps are written bottom row first */
             char *getp = buffer + (info->height - y - 1) * pitch;
             dst_pitch = BMP_writeline((uint8_t *)getp,
@@ -1000,7 +1004,7 @@ int GIMEX_API BMP_write(GINSTANCE *ctx, const GINFO *info, char *buffer, int pit
     if (bpp <= 8 && num_colors) {
         uint8_t pal[256 * 4];
 
-        for (int i = 0; i < num_colors; ++i) {
+        for (i = 0; i < num_colors; ++i) {
             pal[i * 4 + 0] = info->colortbl[i].b;
             pal[i * 4 + 1] = info->colortbl[i].g;
             pal[i * 4 + 2] = info->colortbl[i].r;
@@ -1017,7 +1021,7 @@ int GIMEX_API BMP_write(GINSTANCE *ctx, const GINFO *info, char *buffer, int pit
 
     /* We do this second time here and actually write to our file/stream */
     if (line_buffer != NULL) {
-        for (int y = 0; y < info->height; ++y) {
+        for (y = 0; y < info->height; ++y) {
             /* Bitmaps are written bottom row first */
             char *getp = buffer + (info->height - y - 1) * pitch;
             dst_pitch = BMP_writeline((uint8_t *)getp,

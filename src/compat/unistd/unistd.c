@@ -47,6 +47,14 @@ int __cdecl minipos_unlink(char const *_FileName)
     return ret;
 }
 
+int __cdecl minipos_getpagesize(void)
+{
+    SYSTEM_INFO system_info;
+    GetSystemInfo(&system_info);
+
+    return (int)system_info.dwPageSize;
+}
+
 int __cdecl minipos_open(char const *_FileName, int _OpenFlag, ...)
 {
     va_list ap;

@@ -17,7 +17,9 @@
 
 template<class T> class cRZAutoRefCount
 {
+#ifndef MATCH_ABI
     static_assert(std::is_base_of<cIGZUnknown, T>::value, "T must extend cIGZUnknown");
+#endif
 
 public:
     cRZAutoRefCount() : mpObject(nullptr) {}

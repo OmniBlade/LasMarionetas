@@ -14,8 +14,8 @@
  * Based on https://gist.github.com/jtbr/7a43e6281e6cca353b33ee501421860c
  */
 
-#ifndef STDCOMPAT_ENDIANNESS_H
-#define STDCOMPAT_ENDIANNESS_H
+#ifndef COMPAT_ENDIANNESS_H
+#define COMPAT_ENDIANNESS_H
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -156,8 +156,8 @@ static inline double bswapd(double f)
 }
 
 /* Defines byte swaps as needed depending upon platform endianness */
-#if !defined(htobe32) /* Assume all are defined if this is. */
 #if defined(__LITTLE_ENDIAN__)
+#if !defined(htobe32) /* Assume all are defined if this is. */
 #define htobe16(x) bswap16(x)
 #define htole16(x) (x)
 #define be16toh(x) bswap16(x)
@@ -172,13 +172,21 @@ static inline double bswapd(double f)
 #define htole64(x) (x)
 #define be64toh(x) bswap64(x)
 #define le64toh(x) (x)
+#endif
 
+#define htobef(x) bswapf(x)
+#define htolef(x) (x)
 #define beftoh(x) bswapf(x)
 #define leftoh(x) (x)
 
+#define htobed(x) bswapd(x)
+#define htoled(x) (x)
 #define bedtoh(x) bswapd(x)
 #define ledtoh(x) (x)
+
+#define fourcc(a, b, c, d) ((uint32_t)(((d) << 24) | ((c) << 16) | ((b) << 8) | (a)))
 #elif defined(__BIG_ENDIAN__)
+#if !defined(htobe32) /* Assume all are defined if this is. */
 #define htobe16(x) (x)
 #define htole16(x) bswap16(x)
 #define be16toh(x) (x)
@@ -193,15 +201,21 @@ static inline double bswapd(double f)
 #define htole64(x) bswap64(x)
 #define be64toh(x) (x)
 #define le64toh(x) bswap64(x)
+#endif
 
+#define htobef(x) (x)
+#define htolef(x) bswapf(x)
 #define beftoh(x) (x)
 #define leftoh(x) bswapf(x)
 
+#define htobed(x) (x)
+#define htoled(x) bswapd(x)
 #define bedtoh(x) (x)
 #define ledtoh(x) bswapd(x)
+
+#define fourcc(a, b, c, d) ((uint32_t)((d) | ((c) << 8) | ((b) << 16) | ((a) << 24)))
 #else
 #warning "Unknown Platform / endianness; network / host byte swaps not defined."
-#endif
 #endif
 
 /* Some aliases similar to the standard sockets byte swaps for network order transmission. */
@@ -211,5 +225,11 @@ static inline double bswapd(double f)
 #define hton32(x) htobe32((x))
 #define ntoh64(x) be64toh((x))
 #define hton64(x) htobe64((x))
+
+/* Some macros for extracting data from byte arrays */
+#define get_le16(x) ((x[1] << 8) | x[0])
+#define get_be16(x) ((x[0] << 8) | x[1])
+#define get_le32(x) ((x[3] << 24) | (x[2] << 16) | (x[1] << 8) | x[0])
+#define get_be32(x) ((x[0] << 24) | (x[1] << 16) | (x[2] << 8) | x[3])
 
 #endif /* STDUTIL_ENDIANNESS_H */

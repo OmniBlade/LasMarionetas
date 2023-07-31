@@ -75,11 +75,8 @@ int CODEX_API REF_decode(void *dest, const void *src, int *size)
 
                     ref = putp - 1 - (((first & 0x60) << 3) + second);
                     run = ((first & 0x1c) >> 2) + 3;
-
-                    do {
-                        *putp++ = *ref++;
-                    } while (run--);
-
+                    memcpy(putp, ref, run);
+                    putp += run;
                     first = *getp;
                 } while (!(first & 0x80));
             }
@@ -97,10 +94,8 @@ int CODEX_API REF_decode(void *dest, const void *src, int *size)
 
                 ref = putp - 1 - (((second & 0x3f) << 8) + third);
                 run = (first & 0x3f) + 4;
-
-                do {
-                    *putp++ = *ref++;
-                } while (run--);
+                memcpy(putp, ref, run);
+                putp += run;
 
                 continue;
             }
@@ -119,10 +114,8 @@ int CODEX_API REF_decode(void *dest, const void *src, int *size)
 
                 ref = putp - 1 - (((first & 0x10) >> 4 << 16) + (second << 8) + third);
                 run = ((first & 0x0c) >> 2 << 8) + forth + 5;
-
-                do {
-                    *putp++ = *ref++;
-                } while (run--);
+                memcpy(putp, ref, run);
+                putp += run;
 
                 continue;
             }
@@ -132,9 +125,9 @@ int CODEX_API REF_decode(void *dest, const void *src, int *size)
             run = ((first & 0x1f) << 2) + 4;
 
             if (run <= 112) {
-                while (run--) {
-                    *putp++ = *getp++;
-                }
+                memcpy(putp, getp, run);
+                putp += run;
+                getp += run;
 
                 continue;
             }

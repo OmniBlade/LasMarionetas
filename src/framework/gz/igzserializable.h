@@ -27,7 +27,7 @@ public:
      * @param ostream Output stream to write data to.
      * @return Did we encounter an error?
      */
-    virtual bool Write(cIGZOStream &ostream) = 0;
+    virtual bool Write(cIGZOStream &ostream) const = 0;
     /**
      * @brief Read object from an input stream.
      * @param istream input stream to read data from.

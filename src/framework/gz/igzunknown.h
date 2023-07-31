@@ -27,7 +27,7 @@ public:
     /**
      * @brief Casts the object to the interface specified by riid
      * @param riid The GUID for the interface type to cast to
-     * @param ppvObj A pointer to a void pointer to store the result in
+     * @param obj A pointer to a void pointer to store the result in
      * @return Whether the object could be successfully cast or not
      */
     virtual bool QueryInterface(uint32_t iid, void **obj) = 0;

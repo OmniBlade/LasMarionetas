@@ -20,8 +20,8 @@ SOFTWARE.
 
 #pragma once
 
-#ifndef MINIPOSIX_DIRENT_H
-#define MINIPOSIX_DIRENT_H
+#ifndef COMPAT_DIRENT_H
+#define COMPAT_DIRENT_H
 
 #ifndef _WIN32
 
@@ -135,4 +135,4 @@ int versionsort(const void *a, const void *b);
 
 #endif /* _WIN32 */
 
-#endif /* MINIPOSIX_DIRENT_H */
+#endif /* COMPAT_DIRENT_H */

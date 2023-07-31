@@ -15,7 +15,7 @@
 
 class cGZCOMLibrary;
 class cIGZCOMLibrary;
-class cIGZFrameWork;
+class cIGZFramework;
 class cIGZString;
 class cIGZSystemService;
 
@@ -50,7 +50,7 @@ public:
     /**
      * @brief Returns a pointer to the framework instance
      */
-    virtual cIGZFrameWork *FrameWork() = 0;
+    virtual cIGZFramework *FrameWork() = 0;
     /**
      * @brief Loads the library at the given path
      * @return Whether the library was successfully loaded
@@ -84,12 +84,11 @@ public:
     /**
      * @brief Does what it says on the tin.
      */
-    virtual cIGZSystemService *SetServiceRunning(bool bRunning) = 0;
+    virtual void SetServiceRunning(bool bRunning) = 0;
     /**
      * @brief Stores a list of loaded libraries in the given array
      * @param pLibraries The array to store the library references in
      * @param nCount A reference to an unsigned int counting the number of libraries
-     * @return The number of libraries loaded
      */
     virtual uint32_t EnumerateLibraries(cIGZCOMLibrary *pLibraries[], uint32_t &nCount) = 0;
     /**

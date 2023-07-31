@@ -17,26 +17,26 @@
 #ifdef BUILD_WITH_ICU
 #include <unicode/uchar.h>
 #include <unicode/ustdio.h>
+#include <unicode/ustring.h>
 typedef UChar unichar_t;
+#define U_CHAR(str) (u##str)
 #elif defined _WIN32
+#include <stdio.h>
 #include <wchar.h>
 typedef wchar_t unichar_t;
-#else
-#error Support for utf16<->utf8 conversion not found for this platform.
-#endif
-
-// Alias the ICU unicode functions when not building against it.
-#if !defined BUILD_WITH_ICU && defined _WIN32
+#define U_CHAR(str) (L##str)
 #define u_strlen wcslen
 #define u_strcpy wcscpy
 #define u_strcat wcscat
-#define u_vsnprintf_u vswprintf
+#define u_vsnprintf_u(w, x, y, z) vswprintf(w, x, y, z)
 #define u_strcmp wcscmp
 #define u_strcasecmp(x, y, z) _wcsicmp(x, y)
 #define u_isspace iswspace
 #define u_tolower towlower
 #define u_strchr wcschr
 #define U_COMPARE_CODE_POINT_ORDER 0x8000
+#else
+#error Support for utf16<->utf8 conversion not found for this platform.
 #endif
 
 #ifndef __has_attribute

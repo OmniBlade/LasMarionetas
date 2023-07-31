@@ -1,0 +1,58 @@
+dnl Process this file with autoconf to produce a configure script. -*-m4-*-
+
+AC_INIT(libspeex/speex.h)
+
+SPEEX_MAJOR_VERSION=0
+SPEEX_MINOR_VERSION=8
+SPEEX_MICRO_VERSION=0
+SPEEX_VERSION=$SPEEX_MAJOR_VERSION.$SPEEX_MINOR_VERSION.$SPEEX_MICRO_VERSION
+SPEEX_BINARY_AGE=0
+SPEEX_INTERFACE_AGE=0
+
+# libtool versioning
+LT_RELEASE=$SPEEX_MAJOR_VERSION.$SPEEX_MINOR_VERSION
+LT_CURRENT=`expr $SPEEX_MICRO_VERSION - $SPEEX_INTERFACE_AGE`
+LT_REVISION=$SPEEX_INTERFACE_AGE
+LT_AGE=`expr $SPEEX_BINARY_AGE - $SPEEX_INTERFACE_AGE`
+AC_SUBST(LT_RELEASE)
+AC_SUBST(LT_CURRENT)
+AC_SUBST(LT_REVISION)
+AC_SUBST(LT_AGE)
+
+# For automake.
+VERSION=$SPEEX_VERSION
+PACKAGE=Speex
+
+AM_INIT_AUTOMAKE($PACKAGE, $VERSION, no-define)
+AM_MAINTAINER_MODE
+
+AC_CANONICAL_HOST
+AC_DISABLE_SHARED
+dnl AC_DISABLE_STATIC
+AM_PROG_LIBTOOL
+
+AC_C_BIGENDIAN
+AC_CHECK_HEADERS(sys/soundcard.h)
+
+AC_PATH_LIBOGG
+if test "$have_libogg" = yes; then
+   src=src
+else
+   src=
+fi
+AC_SUBST(src)
+
+AC_CHECK_LIB(m, sin)
+
+AC_DEFINE_UNQUOTED(VERSION, "${VERSION}")
+
+dnl Output the makefiles and version.h.
+
+AC_OUTPUT([Makefile libspeex/Makefile src/Makefile Speex.spec ])
+
+if test "x$src" = "x"; then 
+echo "You don't seem to have libogg installed. Only the Speex library (libspeex) will be built (no encoder/decoder executable)"
+echo "You can download libogg from http://www.ogg.org/ogg/index.html"
+fi
+
+echo "Type \"make; make install\" to compile and install Speex";

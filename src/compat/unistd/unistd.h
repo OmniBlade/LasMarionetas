@@ -138,6 +138,11 @@ int __cdecl minipos_unlink(char const *_FileName);
 #define unlink minipos_unlink
 #endif /* unlink */
 
+#ifndef getpagesize
+int __cdecl minipos_getpagesize(void);
+#define getpagesize minipos_getpagesize
+#endif /* getpagesize*/
+
 /* permission bits below must be defined in sys/stat.h, but MSVC lacks them */
 
 #ifndef S_IRWXU

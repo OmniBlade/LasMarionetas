@@ -1,7 +1,83 @@
 #include <dirent.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <windows.h>
 #include <winioctl.h>
+
+#if _MSC_VER < 1400
+#ifndef ENOENT
+#define ENOENT 2
+#endif
+
+#ifndef EBADF
+#define EBADF 9
+#endif
+
+#ifndef ENOMEM
+#define ENOMEM 12
+#endif
+
+#ifndef ENOTDIR
+#define ENOTDIR 20
+#endif
+
+#ifndef EINVAL
+#define EINVAL 22
+#endif
+
+#ifndef FSCTL_GET_REPARSE_POINT
+#define FSCTL_GET_REPARSE_POINT CTL_CODE(FILE_DEVICE_FILE_SYSTEM, 42, METHOD_BUFFERED, FILE_ANY_ACCESS)
+#endif
+
+#ifndef IO_REPARSE_TAG_SYMLINK
+#define IO_REPARSE_TAG_SYMLINK (0xA000000CL)
+#endif
+
+#ifndef FILE_ATTRIBUTE_DEVICE
+#define FILE_ATTRIBUTE_DEVICE 0x00000040 
+#endif
+
+#ifndef FILE_NAME_NORMALIZED
+#define FILE_NAME_NORMALIZED 0x0
+#endif
+
+typedef struct _FILE_ID_128
+{
+    BYTE Identifier[16];
+} FILE_ID_128, *PFILE_ID_128; 
+
+typedef struct _FILE_ID_INFO
+{
+    ULONGLONG VolumeSerialNumber;
+    FILE_ID_128 FileId;
+} FILE_ID_INFO, *PFILE_ID_INFO;
+
+typedef enum _FILE_INFO_BY_HANDLE_CLASS
+{
+    FileBasicInfo,
+    FileStandardInfo,
+    FileNameInfo,
+    FileRenameInfo,
+    FileDispositionInfo,
+    FileAllocationInfo,
+    FileEndOfFileInfo,
+    FileStreamInfo,
+    FileCompressionInfo,
+    FileAttributeTagInfo,
+    FileIdBothDirectoryInfo,
+    FileIdBothDirectoryRestartInfo,
+    FileIoPriorityHintInfo,
+    FileRemoteProtocolInfo,
+    FileFullDirectoryInfo,
+    FileFullDirectoryRestartInfo,
+    FileStorageInfo,
+    FileAlignmentInfo,
+    FileIdInfo,
+    MaximumFileInfoByHandleClass
+} FILE_INFO_BY_HANDLE_CLASS,
+    *PFILE_INFO_BY_HANDLE_CLASS;
+
+#endif
 
 struct __dir
 {
@@ -54,9 +130,9 @@ static int __islink(const wchar_t *name, char *buffer)
     return ((REPARSE_GUID_DATA_BUFFER *)buffer)->ReparseTag == IO_REPARSE_TAG_SYMLINK;
 }
 
-static unsigned long long __inode(const wchar_t *name)
+static unsigned __int64 __inode(const wchar_t *name)
 {
-    unsigned long long value = 0;
+    unsigned __int64 value = 0;
     BOOL result;
     FILE_ID_INFO fileid;
     BY_HANDLE_FILE_INFORMATION info;
@@ -87,7 +163,7 @@ static DIR *__internal_opendir(wchar_t *wname, int size)
     static wchar_t *suffix = L"\\*.*";
     int extra_prefix = 4; /* use prefix "\\?\" to handle long file names */
     static int extra_suffix = 4; /* use suffix "\*.*" to find everything */
-    WIN32_FIND_DATAW w32fd = { 0 };
+    WIN32_FIND_DATAW w32fd = {0};
     HANDLE hFindFile = INVALID_HANDLE_VALUE;
     static int grow_factor = 2;
     char *buffer = NULL;
@@ -330,12 +406,10 @@ int dirfd(DIR *dirp)
         __seterrno(EINVAL);
         return -1;
     }
-    return (int)(long long)((struct __dir *)dirp)->fd;
+    return (int)(__int64)((struct __dir *)dirp)->fd;
 }
 
-int scandir(const char *dirp,
-    struct dirent ***namelist,
-    int (*filter)(const struct dirent *),
+int scandir(const char *dirp, struct dirent ***namelist, int (*filter)(const struct dirent *),
     int (*compar)(const struct dirent **, const struct dirent **))
 {
     struct dirent **entries = NULL, **tmp_entries = NULL;

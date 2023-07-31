@@ -23,6 +23,7 @@ extern "C" uint64_t __rdtsc();
 #pragma intrinsic(__rdtsc)
 #endif
 
+// A bunch of helper functions and globals.
 namespace
 {
 uint64_t CPUTicks()

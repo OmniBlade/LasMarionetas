@@ -21,7 +21,7 @@ cIGZCOM *GZCOM()
 cRZCOMDllDirector::cRZCOMDllDirector() :
     mnRefCount(0),
     mDirectorID(0),
-    msLibraryPath(),
+    mzLibraryPath(),
     mpCOM(nullptr),
     mpFrameWork(nullptr),
     mChildDirectorArray(),
@@ -30,26 +30,26 @@ cRZCOMDllDirector::cRZCOMDllDirector() :
     // Empty
 }
 
-cRZCOMDllDirector::~cRZCOMDllDirector(void)
+cRZCOMDllDirector::~cRZCOMDllDirector()
 {
     // Empty
 }
 
-bool cRZCOMDllDirector::QueryInterface(uint32_t riid, void **ppvObj)
+bool cRZCOMDllDirector::QueryInterface(uint32_t riid, void **obj)
 {
     switch (riid) {
         case GZIID_cIGZCOMDirector:
-            *ppvObj = static_cast<cIGZCOMDirector *>(this);
+            *obj = static_cast<cIGZCOMDirector *>(this);
             AddRef();
             return true;
 
-        case GZIID_cIGZFrameWorkHooks:
-            *ppvObj = static_cast<cIGZFrameWorkHooks *>(this);
+        case GZIID_cIGZFrameworkHooks:
+            *obj = static_cast<cIGZFrameworkHooks *>(this);
             AddRef();
             return true;
 
         case GZIID_cIGZUnknown:
-            *ppvObj = static_cast<cIGZUnknown *>(static_cast<cIGZCOMDirector *>(this));
+            *obj = static_cast<cIGZUnknown *>(static_cast<cIGZCOMDirector *>(this));
             AddRef();
             return true;
     }
@@ -67,16 +67,16 @@ uint32_t cRZCOMDllDirector::Release()
     return RemoveRef();
 }
 
-bool cRZCOMDllDirector::InitializeCOM(cIGZCOM *pCOM, const cIGZString &sLibraryPath)
+bool cRZCOMDllDirector::InitializeCOM(cIGZCOM *com, const cIGZString &library_path)
 {
-    if (pCOM != nullptr) {
-        mpCOM = pCOM;
-        mpFrameWork = pCOM->FrameWork();
-        msLibraryPath = sLibraryPath;
+    if (com != nullptr) {
+        mpCOM = com;
+        mpFrameWork = com->FrameWork();
+        mzLibraryPath = library_path;
 
         for (ChildDirectorArray::iterator it = mChildDirectorArray.begin(); it != mChildDirectorArray.end(); ++it) {
             cRZCOMDllDirector *const pDirector = *it;
-            pDirector->InitializeCOM(pCOM, sLibraryPath);
+            pDirector->InitializeCOM(com, library_path);
         }
 
         return true;
@@ -85,52 +85,56 @@ bool cRZCOMDllDirector::InitializeCOM(cIGZCOM *pCOM, const cIGZString &sLibraryP
     return false;
 }
 
-bool cRZCOMDllDirector::OnStart(cIGZCOM *pCOM)
+bool cRZCOMDllDirector::OnStart(cIGZCOM *com)
 {
     return true;
 }
 
-void cRZCOMDllDirector::EnumClassObjects(ClassObjectEnumerationCallback pCallback, void *pContext)
+void cRZCOMDllDirector::EnumClassObjects(ClassObjectEnumerationCallback callback, void *context)
 {
     for (ChildDirectorArray::iterator it(mChildDirectorArray.begin()); it != mChildDirectorArray.end(); ++it) {
-        cRZCOMDllDirector *const pDirector = *it;
-        pDirector->EnumClassObjects(pCallback, pContext);
+        cRZCOMDllDirector *const child_director = *it;
+        child_director->EnumClassObjects(callback, context);
     }
 
     for (ClassObjectMap::iterator it2(mClassObjectMap.begin()); it2 != mClassObjectMap.end(); ++it2) {
-        const uint32_t classID = (*it2).first;
-        pCallback(classID, 0, pContext);
+        const uint32_t class_id = (*it2).first;
+        callback(class_id, 0, context);
     }
 }
 
-bool cRZCOMDllDirector::GetClassObject(uint32_t rclsid, uint32_t riid, void **ppvObj)
+bool cRZCOMDllDirector::GetClassObject(uint32_t rclsid, uint32_t riid, void **obj)
 {
     for (ChildDirectorArray::iterator it(mChildDirectorArray.begin()); it != mChildDirectorArray.end(); ++it) {
-        cRZCOMDllDirector *const pDirector = *it;
-        if (pDirector->GetClassObject(rclsid, riid, ppvObj)) {
+        cRZCOMDllDirector *const director = *it;
+
+        if (director->GetClassObject(rclsid, riid, obj)) {
             return true;
         }
     }
 
     ClassObjectMap::iterator it2 = mClassObjectMap.find(rclsid);
+
     if (it2 != mClassObjectMap.end()) {
         FactoryFuncRecord &ffr = (*it2).second;
+
         switch (ffr.second) {
             case kFactorFunctionType1: {
-                FactoryFunctionPtr1 const ffp1 = (FactoryFunctionPtr1)ffr.first;
-                cIGZUnknown *const pObj = ffp1();
-                if (pObj->QueryInterface(riid, ppvObj)) {
+                FactoryFunctionPtr1 const ffp1 = reinterpret_cast<FactoryFunctionPtr1>(ffr.first);
+                cIGZUnknown *const new_obj = ffp1();
+
+                if (new_obj->QueryInterface(riid, obj)) {
                     return true;
                 }
 
-                pObj->AddRef();
-                pObj->Release();
+                new_obj->AddRef();
+                new_obj->Release();
                 break;
             }
 
             case kFactorFunctionType2: {
-                FactoryFunctionPtr2 ffp2 = (FactoryFunctionPtr2)ffr.first;
-                return ffp2(riid, ppvObj);
+                FactoryFunctionPtr2 ffp2 = reinterpret_cast<FactoryFunctionPtr2>(ffr.first);
+                return ffp2(riid, obj);
             }
 
             default:
@@ -145,8 +149,9 @@ bool cRZCOMDllDirector::CanUnloadNow()
 {
     if (mnRefCount == 0) {
         for (ChildDirectorArray::iterator it(mChildDirectorArray.begin()); it != mChildDirectorArray.end(); ++it) {
-            cRZCOMDllDirector *const pCOMDirectorTemp = *it;
-            if (!pCOMDirectorTemp->CanUnloadNow()) {
+            cRZCOMDllDirector *const director = *it;
+
+            if (!director->CanUnloadNow()) {
                 return false;
             }
         }
@@ -169,7 +174,7 @@ uint32_t cRZCOMDllDirector::RemoveRef()
     return mnRefCount;
 }
 
-cIGZFrameWork *cRZCOMDllDirector::FrameWork()
+cIGZFramework *cRZCOMDllDirector::FrameWork()
 {
     return mpFrameWork;
 }
@@ -179,9 +184,9 @@ cIGZCOM *cRZCOMDllDirector::GZCOM()
     return mpCOM;
 }
 
-bool cRZCOMDllDirector::GetLibraryPath(cIGZString &sLibraryPath)
+bool cRZCOMDllDirector::GetLibraryPath(cIGZString &library_path)
 {
-    sLibraryPath = msLibraryPath;
+    library_path = mzLibraryPath;
     return true;
 }
 
@@ -230,22 +235,21 @@ bool cRZCOMDllDirector::OnInstall()
     return true;
 }
 
-void cRZCOMDllDirector::AddDirector(cIGZCOMDirector *pDirector)
+void cRZCOMDllDirector::AddDirector(cRZCOMDllDirector *director)
 {
-    cRZCOMDllDirector *pCOMDirector = reinterpret_cast<cRZCOMDllDirector *>(pDirector);
-    pCOMDirector->InitializeCOM(GZCOM(), msLibraryPath);
+    director->InitializeCOM(GZCOM(), mzLibraryPath);
 
-    for (auto it(pCOMDirector->mChildDirectorArray.begin()); it != pCOMDirector->mChildDirectorArray.end(); ++it) {
-        cRZCOMDllDirector *const pCOMDirectorTemp = *it;
-        AddDirector(pCOMDirectorTemp);
+    for (auto it(director->mChildDirectorArray.begin()); it != director->mChildDirectorArray.end(); ++it) {
+        cRZCOMDllDirector *const child_director = *it;
+        AddDirector(child_director);
     }
 
-    mChildDirectorArray.push_back(pCOMDirector);
+    mChildDirectorArray.push_back(director);
 }
 
 void cRZCOMDllDirector::AddCls(uint32_t clsid, FactoryFunctionPtr1 pff1)
 {
-    ClassObjectMap::iterator it(mClassObjectMap.find(clsid));
+    // ClassObjectMap::iterator it(mClassObjectMap.find(clsid));
 
     const ClassObjectMap::value_type entry(clsid, FactoryFuncRecord(DummyFunctionPtr(pff1), kFactorFunctionType1));
     mClassObjectMap.insert(entry);
@@ -253,7 +257,7 @@ void cRZCOMDllDirector::AddCls(uint32_t clsid, FactoryFunctionPtr1 pff1)
 
 void cRZCOMDllDirector::AddCls(uint32_t clsid, FactoryFunctionPtr2 pff2)
 {
-    ClassObjectMap::iterator it(mClassObjectMap.find(clsid));
+    // ClassObjectMap::iterator it(mClassObjectMap.find(clsid));
 
     const ClassObjectMap::value_type entry(clsid, FactoryFuncRecord(DummyFunctionPtr(pff2), kFactorFunctionType2));
     mClassObjectMap.insert(entry);

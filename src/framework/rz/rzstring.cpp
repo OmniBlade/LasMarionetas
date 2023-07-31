@@ -22,30 +22,30 @@ static_assert(sizeof(cRZString) == 0x14, "cRZString is not the expected size for
 
 cRZString::cRZString() : mnRefCount(0) {}
 
-cRZString::cRZString(const string_data &szSource) : string_data(szSource), mnRefCount(0) {}
+cRZString::cRZString(const string_data &source) : string_data(source), mnRefCount(0) {}
 
-cRZString::cRZString(const cRZString &szSource, size_t dwStart, size_t dwEnd) :
-    string_data(szSource, dwStart, dwEnd), mnRefCount(0)
+cRZString::cRZString(const cRZString &source, size_t dwStart, size_t dwEnd) :
+    string_data(source, dwStart, dwEnd), mnRefCount(0)
 {
 }
 
-cRZString::cRZString(const char *pszSource) : string_data(pszSource), mnRefCount(0) {}
+cRZString::cRZString(const char *source) : string_data(source), mnRefCount(0) {}
 
-cRZString::cRZString(const char *pszSource, size_t dwLen) : string_data(pszSource, dwLen), mnRefCount(0) {}
+cRZString::cRZString(const char *source, size_t dwLen) : string_data(source, dwLen), mnRefCount(0) {}
 
-cRZString::cRZString(const cIGZString &szSource) : string_data(szSource.Data(), szSource.Strlen()), mnRefCount(0) {}
+cRZString::cRZString(const cIGZString &source) : string_data(source.Data(), source.Strlen()), mnRefCount(0) {}
 
-cRZString::cRZString(char cChar, size_t dwRepetitions) : string_data(dwRepetitions, cChar), mnRefCount(0) {}
+cRZString::cRZString(char character, size_t repetitions) : string_data(repetitions, character), mnRefCount(0) {}
 
-bool cRZString::QueryInterface(uint32_t riid, void **ppvObj)
+bool cRZString::QueryInterface(uint32_t riid, void **obj)
 {
     switch (riid) {
         case GZIID_cIGZUnknown:
-            *ppvObj = static_cast<cIGZUnknown *>(this);
+            *obj = static_cast<cIGZUnknown *>(this);
             AddRef();
             return true;
         case GZIID_cIGZString:
-            *ppvObj = static_cast<cIGZString *>(this);
+            *obj = static_cast<cIGZString *>(this);
             AddRef();
             return true;
         default:
@@ -71,21 +71,21 @@ uint32_t cRZString::Release()
     return mnRefCount;
 }
 
-void cRZString::FromChar(const char *pszSource)
+void cRZString::FromChar(const char *source)
 {
-    if (pszSource == nullptr) {
+    if (source == nullptr) {
         erase();
     } else {
-        assign(pszSource);
+        assign(source);
     }
 }
 
-void cRZString::FromChar(const char *pszSource, uint32_t dwLength)
+void cRZString::FromChar(const char *source, uint32_t length)
 {
-    if (pszSource == nullptr) {
+    if (source == nullptr) {
         erase();
     } else {
-        assign(pszSource, dwLength);
+        assign(source, length);
     }
 }
 
@@ -109,51 +109,51 @@ bool cRZString::IsEmpty() const
     return empty();
 }
 
-bool cRZString::IsEqual(const cIGZString *szOther, bool bCaseSensitive) const
+bool cRZString::IsEqual(const cIGZString *other, bool case_sensitive) const
 {
-    if (szOther == nullptr) {
+    if (other == nullptr) {
         return Strlen() == 0;
     }
 
-    cRZString tmp(szOther->ToChar());
+    cRZString tmp(other->ToChar());
 
-    return CompareTo(tmp, bCaseSensitive) == 0;
+    return CompareTo(tmp, case_sensitive) == 0;
 }
 
-bool cRZString::IsEqual(const cIGZString &szOther, bool bCaseSensitive) const
+bool cRZString::IsEqual(const cIGZString &other, bool case_sensitive) const
 {
-    return CompareTo(szOther, bCaseSensitive) == 0;
+    return CompareTo(other, case_sensitive) == 0;
 }
 
-bool cRZString::IsEqual(const char *pszOther, bool bCaseSensitive) const
+bool cRZString::IsEqual(const char *other, bool case_sensitive) const
 {
-    if (pszOther == nullptr) {
+    if (other == nullptr) {
         return Strlen() == 0;
     }
 
-    return CompareTo(pszOther, strlen(pszOther), bCaseSensitive) == 0;
+    return CompareTo(other, strlen(other), case_sensitive) == 0;
 }
 
-bool cRZString::IsEqual(const char *pszOther, uint32_t dwLength, bool bCaseSensitive) const
+bool cRZString::IsEqual(const char *other, uint32_t length, bool case_sensitive) const
 {
-    if (pszOther == nullptr) {
+    if (other == nullptr) {
         return Strlen() == 0;
     }
 
-    return CompareTo(pszOther, dwLength, bCaseSensitive) == 0;
+    return CompareTo(other, length, case_sensitive) == 0;
 }
 
-int32_t cRZString::CompareTo(const cIGZString &szOther, bool bCaseSensitive) const
+int32_t cRZString::CompareTo(const cIGZString &other, bool case_sensitive) const
 {
-    uint32_t other_len = szOther.Strlen();
+    uint32_t other_len = other.Strlen();
     uint32_t cmp_len = std::min((uint32_t)size(), other_len);
 
     int32_t ret;
 
-    if (bCaseSensitive) {
-        ret = std::strncmp(c_str(), szOther.ToChar(), cmp_len);
+    if (case_sensitive) {
+        ret = std::strncmp(c_str(), other.ToChar(), cmp_len);
     } else {
-        ret = strncasecmp(c_str(), szOther.ToChar(), cmp_len);
+        ret = strncasecmp(c_str(), other.ToChar(), cmp_len);
     }
 
     if (ret == 0) {
@@ -163,178 +163,178 @@ int32_t cRZString::CompareTo(const cIGZString &szOther, bool bCaseSensitive) con
     return ret;
 }
 
-int32_t cRZString::CompareTo(const char *pszOther, bool bCaseSensitive) const
+int32_t cRZString::CompareTo(const char *other, bool case_sensitive) const
 {
-    return CompareTo(pszOther, strlen(pszOther), bCaseSensitive);
+    return CompareTo(other, std::strlen(other), case_sensitive);
 }
 
-int32_t cRZString::CompareTo(const char *pszOther, uint32_t dwLength, bool bCaseSensitive) const
+int32_t cRZString::CompareTo(const char *other, uint32_t length, bool case_sensitive) const
 {
-    if (dwLength == -1) {
-        dwLength = strlen(pszOther);
+    if (length == -1) {
+        length = std::strlen(other);
     }
 
-    uint32_t cmp_len = std::min((uint32_t)size(), dwLength);
+    uint32_t cmp_len = std::min(uint32_t(size()), length);
     int32_t ret;
 
-    if (bCaseSensitive) {
-        ret = std::strncmp(c_str(), pszOther, cmp_len);
+    if (case_sensitive) {
+        ret = std::strncmp(c_str(), other, cmp_len);
     } else {
-        ret = strncasecmp(c_str(), pszOther, cmp_len);
+        ret = strncasecmp(c_str(), other, cmp_len);
     }
 
     if (ret == 0) {
-        ret = size() - dwLength;
+        ret = size() - length;
     }
 
     return ret;
 }
 
-cIGZString &cRZString::operator=(const cIGZString &szOther)
+cIGZString &cRZString::operator=(const cIGZString &other)
 {
-    Copy(szOther);
+    Copy(other);
 
     return *this;
 }
 
-void cRZString::Copy(const cIGZString &szOther)
+void cRZString::Copy(const cIGZString &other)
 {
-    FromChar(szOther.Data(), szOther.Strlen());
+    FromChar(other.Data(), other.Strlen());
 }
 
-void cRZString::Resize(uint32_t dwNewSize)
+void cRZString::Resize(uint32_t new_size)
 {
-    resize(dwNewSize);
+    resize(new_size);
 }
 
-cIGZString *cRZString::Append(const char *pszOther)
+cIGZString *cRZString::Append(const char *other)
 {
-    if (pszOther != nullptr) {
-        append(pszOther, strlen(pszOther));
+    if (other != nullptr) {
+        append(other, strlen(other));
     }
 
     return this;
 }
 
-cIGZString *cRZString::Append(const char *pszOther, uint32_t dwLength)
+cIGZString *cRZString::Append(const char *other, uint32_t length)
 {
-    append(pszOther, dwLength);
+    append(other, length);
 
     return this;
 }
 
-cIGZString *cRZString::Append(const cIGZString &szOther)
+cIGZString *cRZString::Append(const cIGZString &other)
 {
-    append(szOther.ToChar(), szOther.Strlen());
+    append(other.ToChar(), other.Strlen());
 
     return this;
 }
 
-cIGZString *cRZString::Insert(uint32_t dwPos, const char *pszOther, uint32_t dwLength)
+cIGZString *cRZString::Insert(uint32_t position, const char *other, uint32_t length)
 {
-    insert(dwPos, pszOther, dwLength);
+    insert(position, other, length);
 
     return this;
 }
 
-cIGZString *cRZString::Insert(uint32_t dwPos, const cIGZString &szOther)
+cIGZString *cRZString::Insert(uint32_t position, const cIGZString &other)
 {
-    insert(dwPos, szOther.ToChar(), szOther.Strlen());
+    insert(position, other.ToChar(), other.Strlen());
 
     return this;
 }
 
-cIGZString *cRZString::Replace(uint32_t dwStartPos, const char *pszOther, uint32_t dwLength)
+cIGZString *cRZString::Replace(uint32_t start_position, const char *other, uint32_t length)
 {
-    replace(dwStartPos, dwLength, pszOther);
+    replace(start_position, length, other);
 
     return this;
 }
 
-cIGZString *cRZString::Replace(uint32_t dwStartPos, const cIGZString &szOther)
+cIGZString *cRZString::Replace(uint32_t start_position, const cIGZString &other)
 {
-    replace(dwStartPos, szOther.Strlen(), szOther.ToChar());
+    replace(start_position, other.Strlen(), other.ToChar());
 
     return this;
 }
 
-cIGZString *cRZString::Erase(uint32_t dwStartPos, uint32_t dwEndPos)
+cIGZString *cRZString::Erase(uint32_t start_position, uint32_t end_position)
 {
-    erase(dwStartPos, dwEndPos);
+    erase(start_position, end_position);
 
     return this;
 }
 
-int32_t cRZString::Find(const char *pszOther, uint32_t dwPos, bool bCaseSensitive) const
+int32_t cRZString::Find(const char *other, uint32_t position, bool case_sensitive) const
 {
-    if (bCaseSensitive) {
-        return find(pszOther, dwPos);
-    }
-
-    cRZString tmpthis(*this);
-    cRZString tmpother(pszOther, strlen(pszOther));
-    tmpthis.MakeLower();
-    tmpother.MakeLower();
-
-    return tmpthis.find(tmpother, dwPos);
-}
-
-int32_t cRZString::Find(const cIGZString &szOther, uint32_t dwPos, bool bCaseSensitive) const
-{
-    if (bCaseSensitive) {
-        return find(szOther.ToChar(), dwPos);
+    if (case_sensitive) {
+        return find(other, position);
     }
 
     cRZString tmpthis(*this);
-    cRZString tmpother(szOther);
+    cRZString tmother(other, strlen(other));
     tmpthis.MakeLower();
-    tmpother.MakeLower();
+    tmother.MakeLower();
 
-    return tmpthis.find(tmpother, dwPos);
+    return tmpthis.find(tmother, position);
 }
 
-int32_t cRZString::RFind(const char *pszOther, uint32_t dwPos, bool bCaseSensitive) const
+int32_t cRZString::Find(const cIGZString &other, uint32_t position, bool case_sensitive) const
 {
-    if (bCaseSensitive) {
-        return rfind(pszOther, dwPos);
+    if (case_sensitive) {
+        return find(other.ToChar(), position);
     }
 
     cRZString tmpthis(*this);
-    cRZString tmpother(pszOther, strlen(pszOther));
+    cRZString tmother(other);
     tmpthis.MakeLower();
-    tmpother.MakeLower();
+    tmother.MakeLower();
 
-    return tmpthis.rfind(tmpother, dwPos);
+    return tmpthis.find(tmother, position);
 }
 
-int32_t cRZString::RFind(const cIGZString &szOther, uint32_t dwPos, bool bCaseSensitive) const
+int32_t cRZString::RFind(const char *other, uint32_t position, bool case_sensitive) const
 {
-    if (bCaseSensitive) {
-        return rfind(szOther.ToChar(), dwPos);
+    if (case_sensitive) {
+        return rfind(other, position);
     }
 
     cRZString tmpthis(*this);
-    cRZString tmpother(szOther);
+    cRZString tmother(other, strlen(other));
     tmpthis.MakeLower();
-    tmpother.MakeLower();
+    tmother.MakeLower();
 
-    return tmpthis.rfind(tmpother, dwPos);
+    return tmpthis.rfind(tmother, position);
 }
 
-cIGZString *cRZString::Sprintf(const char *pszFormat, ...)
+int32_t cRZString::RFind(const cIGZString &other, uint32_t position, bool case_sensitive) const
+{
+    if (case_sensitive) {
+        return rfind(other.ToChar(), position);
+    }
+
+    cRZString tmpthis(*this);
+    cRZString tmother(other);
+    tmpthis.MakeLower();
+    tmother.MakeLower();
+
+    return tmpthis.rfind(tmother, position);
+}
+
+cIGZString *cRZString::Sprintf(const char *format, ...)
 {
     va_list args;
-    va_start(args, pszFormat);
-    cIGZString *ret = SprintfVaList(pszFormat, args);
+    va_start(args, format);
+    cIGZString *ret = SprintfVaList(format, args);
     va_end(args);
 
     return ret;
 }
 
-cIGZString *cRZString::SprintfVaList(const char *pszFormat, va_list zList)
+cIGZString *cRZString::SprintfVaList(const char *format, va_list zList)
 {
     char buffer[256];
-    int len = std::vsnprintf(buffer, sizeof(buffer), pszFormat, zList);
+    int len = std::vsnprintf(buffer, sizeof(buffer), format, zList);
 
     if (len < 256) {
         // If we got a positive length in the range of the preallocated buffer we are done.
@@ -342,11 +342,11 @@ cIGZString *cRZString::SprintfVaList(const char *pszFormat, va_list zList)
         if (len > 0) {
             assign(buffer);
         } else {
-            size_t tmp_len = std::max(2 * sizeof(pszFormat), 2 * size());
+            size_t tmp_len = std::max(2 * sizeof(format), 2 * size());
 
             while (tmp_len <= 999999 && len < 0) {
                 resize(len + 1);
-                len = std::vsnprintf(&operator[](0), tmp_len, pszFormat, zList);
+                len = std::vsnprintf(&operator[](0), tmp_len, format, zList);
                 tmp_len *= 2;
             }
 
@@ -357,7 +357,7 @@ cIGZString *cRZString::SprintfVaList(const char *pszFormat, va_list zList)
     } else {
         // If we got a positive length greater than the buffer allocate a temporary buffer of appropriate size.
         resize(len + 1);
-        len = std::vsnprintf(&operator[](0), len + 1, pszFormat, zList);
+        len = std::vsnprintf(&operator[](0), len + 1, format, zList);
         resize(len);
     }
 

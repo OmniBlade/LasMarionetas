@@ -24,7 +24,7 @@
 
 #include <vector>
 
-class cRZCOMDllDirector : public cIGZCOMDirector, public cIGZFrameWorkHooks
+class cRZCOMDllDirector : public cIGZCOMDirector, public cIGZFrameworkHooks
 {
 protected:
     enum FactorFunctionType
@@ -43,25 +43,25 @@ public:
     virtual ~cRZCOMDllDirector();
 
     // cIGZUnknown
-    virtual bool QueryInterface(uint32_t riid, void **ppvObj) override;
+    virtual bool QueryInterface(uint32_t riid, void **obj) override;
     virtual uint32_t AddRef() override;
     virtual uint32_t Release() override;
 
     // cIGZCOMDirector
-    virtual bool InitializeCOM(cIGZCOM *pCOM, const cIGZString &sLibraryPath) override;
-    virtual bool OnStart(cIGZCOM *pCOM) override;
-    virtual void EnumClassObjects(ClassObjectEnumerationCallback pCallback, void *pContext) override;
-    virtual bool GetClassObject(uint32_t rclsid, uint32_t riid, void **ppvObj) override;
+    virtual bool InitializeCOM(cIGZCOM *com, const cIGZString &library_path) override;
+    virtual bool OnStart(cIGZCOM *com) override;
+    virtual void EnumClassObjects(ClassObjectEnumerationCallback callback, void *context) override;
+    virtual bool GetClassObject(uint32_t rclsid, uint32_t riid, void **obj) override;
     virtual bool CanUnloadNow() override;
     virtual bool OnUnload() override { return true; }
     virtual uint32_t RefCount() override;
     virtual uint32_t RemoveRef() override;
-    virtual cIGZFrameWork *FrameWork() override;
+    virtual cIGZFramework *FrameWork() override;
     virtual cIGZCOM *GZCOM() override;
-    virtual bool GetLibraryPath(cIGZString &sLibraryPath) override;
+    virtual bool GetLibraryPath(cIGZString &library_path) override;
     virtual uint32_t GetHeapAllocatedSize() override;
 
-    // cIGZFrameWorkHooks
+    // cIGZFrameworkHooks
     virtual bool PreFrameWorkInit() override;
     virtual bool PreAppInit() override;
     virtual bool PostAppInit() override;
@@ -72,7 +72,7 @@ public:
     virtual bool OnInstall() override;
 
 protected:
-    void AddDirector(cIGZCOMDirector *pCOMDirector);
+    void AddDirector(cRZCOMDllDirector *director);
     void AddCls(uint32_t clsid, FactoryFunctionPtr1 pff1);
     void AddCls(uint32_t clsid, FactoryFunctionPtr2 pff2);
 
@@ -98,16 +98,46 @@ protected:
 
     uint32_t mnRefCount;
     uint32_t mDirectorID;
-    cRZString msLibraryPath;
+    cRZString mzLibraryPath;
     cIGZCOM *mpCOM;
-    cIGZFrameWork *mpFrameWork;
+    cIGZFramework *mpFrameWork;
     ChildDirectorArray mChildDirectorArray;
     ClassObjectMap mClassObjectMap;
 };
 
 /**
+ * @brief Obtains the top level cIGZCOM implementation registered with the top level COM director.
+ */
+cIGZCOM *GZCOM();
+
+/**
  * @brief Obtains the cRZCOMDllDirector implementation from the application/dll.
  *
- * This function should be implemented in the application code.
+ * This function is implemented in the cGZCOMDllDirector translation unit for the main GZApp application, in plugin Dlls it
+ * needs to be implemented to fetch the library COM Director.
  */
 cRZCOMDllDirector *RZGetCOMDllDirector();
+
+/**
+ * PLUGIN_DLL Should be defined before inclusion of rzcomdlldirector.h in a COMDirector implementation translation unit.
+ * see the demo plugin source for how this is used.
+ */
+#ifdef PLUGIN_DLL
+/**
+ * @brief Obtains the top applications level framework for a COM Plugin Dll.
+ * 
+ * This function is implemented in the cGZFramework translation unit for the main GZApp application.
+ */
+inline cIGZFramework *RZGetFramework()
+{
+    return RZGetCOMDllDirector()->FrameWork();
+}
+
+/**
+ * @brief The game expects to be able to find and call this function as part of loading a GZ/RZ plugin.
+ */
+inline extern "C" cIGZCOMDirector *GZDllGetGZCOMDirector()
+{
+    return static_cast<cIGZCOMDirector *>(RZGetCOMDllDirector());
+}
+#endif

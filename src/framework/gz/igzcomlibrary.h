@@ -20,7 +20,7 @@ class cIGZCOMDirector;
 class cIGZString;
 
 // Handle is OS specific, HMODULE for windows, void * for unix. Use void * that can hold either type.
-typedef void *GZLibraryHandle;
+typedef void *tGZLibraryHandle;
 
 class cIGZCOMLibrary : public cIGZUnknown
 {
@@ -28,9 +28,8 @@ public:
     /**
      * @brief Get the path on disk to the dynamic library.
      * @param path A string reference to recieve the path.
-     * @return Was the path successfully retrieved.
      */
-    virtual bool GetPath(cIGZString &path) const = 0;
+    virtual void GetPath(cIGZString &path) const = 0;
     /**
      * @return Pointer to the libray COM directory interface.
      */
@@ -38,7 +37,7 @@ public:
     /**
      * @return OS specific dynamic library handle.
      */
-    virtual GZLibraryHandle GetHandle() const = 0;
+    virtual tGZLibraryHandle GetHandle() const = 0;
     /**
      * @return Is this library currently loaded.
      */

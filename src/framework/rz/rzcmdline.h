@@ -19,6 +19,7 @@
 class cRZCmdLine : public cIGZCmdLine
 {
 public:
+    cRZCmdLine() : mnRefCount(0) {}
     cRZCmdLine(const char *cmdline);
     cRZCmdLine(int argc, char **argv);
     cRZCmdLine(const cIGZCmdLine &that);

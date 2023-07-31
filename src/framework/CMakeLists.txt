@@ -19,6 +19,12 @@ set(FRAMEWORK_SRC
     gimexstd.cpp
     gitinfo.h
     gz/gzclsid.h
+    gz/gzcom.h
+    gz/gzcom.cpp
+    gz/gzcomlibrary.h
+    gz/gzcomlibrary.cpp
+    gz/gzframework.h
+    gz/gzframework.cpp
     gz/igzapp.h
     gz/igzbuffer.h
     gz/igzcmdline.h
@@ -44,6 +50,7 @@ set(FRAMEWORK_SRC
     gz/igzmessagetarget.h
     gz/igzmessagetarget2.h
     gz/igzostream.h
+    gz/igzpersistbufferresource.h
     gz/igzpersistdbrecord.h
     gz/igzpersistdbsegment.h
     gz/igzpersistdbsegmentdirectoryfiles.h
@@ -57,6 +64,9 @@ set(FRAMEWORK_SRC
     gz/igzunknown.h
     gz/igzunknownenum.h
     gz/igzvariant.h
+    rz/convertstring.cpp
+    rz/convertstring.h
+    rz/rzapppath.h
     rz/rzautorefcount.h
     rz/rzcmdline.cpp
     rz/rzcmdline.h
@@ -67,6 +77,12 @@ set(FRAMEWORK_SRC
     rz/rzdate.h
     rz/rzfastalloc.cpp
     rz/rzfastalloc.h
+    rz/rzistream.cpp
+    rz/rzistream.h
+    rz/rzlocale.cpp
+    rz/rzlocale.h
+    rz/rzostream.cpp
+    rz/rzostream.h
     rz/rzrandom.cpp
     rz/rzrandom.h
     rz/rzrandomsuper.cpp
@@ -80,76 +96,62 @@ set(FRAMEWORK_SRC
     rz/rzsystemservice.h
     rz/rzthreadsafe.cpp
     rz/rzthreadsafe.h
+    rz/rzthreadsafeobject.h
     rz/rztime.cpp
     rz/rztime.h
     rz/rztimer.cpp
     rz/rztimer.h
+    rz/rzversion.cpp
+    rz/rzversion.h
     rz/rzunknownmt.cpp
     rz/rzunknownmt.h
     unichar.h
 )
 
-set(FRAMEWORK_LIBS compat gimex)
+add_library(gzframework STATIC ${FRAMEWORK_SRC})
+target_include_directories(gzframework PUBLIC ${FRAMEWORK_INCLUDES})
+add_dependencies(gzframework check_git)
+target_link_libraries(gzframework PUBLIC compat gimex)
 
-if(WIN32 OR "${CMAKE_SYSTEM}" MATCHES "Windows")
+find_package(ICU COMPONENTS data i18n io tu uc)
+
+if(NOT WINDOWS AND NOT ICU_FOUND)
+    message(FATAL_ERROR "ICU is required on non-windows platforms and was not found.")
+endif()
+
+if(ICU_FOUND)
+    target_link_libraries(gzframework PUBLIC ICU::data ICU::i18n ICU::io ICU::tu ICU::uc)
+    target_compile_definitions(gzframework PUBLIC BUILD_WITH_ICU)
+endif()
+
+if(WINDOWS)
     # Add thread releated implementations.
     if(Threads_FOUND)
-        list(APPEND FRAMEWORK_SRC rz/rzcriticalsection_win32.cpp)
+        target_sources(gzframework PRIVATE rz/rzcriticalsection_win32.cpp)
     endif()
-    list(APPEND FRAMEWORK_DEFINITIONS NOMINMAX)
+
+    target_sources(gzframework PRIVATE rz/rzapppath_win32.cpp)
+    target_link_libraries(gzframework PUBLIC powrprof version)
+    target_compile_definitions(gzframework PUBLIC NOMINMAX)
 else()
     # Add thread releated implementations.
     if(Threads_FOUND)
-        list(APPEND FRAMEWORK_LIBS Threads::Threads)
-        list(APPEND FRAMEWORK_SRC rz/rzcriticalsection_posix.cpp)
+        target_sources(gzframework PRIVATE rz/rzcriticalsection_posix.cpp)
+        target_link_libraries(gzframework PUBLIC Threads::Threads)
     endif()
+    
+    target_sources(gzframework PRIVATE rz/rzapppath_posix.cpp)
 endif()
 
-if(STANDALONE OR PLUGIN OR BUILD_TESTS)
-    add_library(gzframework STATIC ${FRAMEWORK_SRC})
-    target_include_directories(gzframework PUBLIC ${FRAMEWORK_INCLUDES})
-    add_dependencies(gzframework check_git)
-    target_link_libraries(gzframework PUBLIC ${FRAMEWORK_LIBS})
-    target_compile_features(gzframework PUBLIC cxx_std_17) # Pass the required standard down.
-    target_compile_definitions(gzframework PUBLIC ${FRAMEWORK_DEFINITIONS})
-endif()
-
-# DLL builds expose any globals as a reference that the injectable dll builds provide hooks against.
-if(DLLBUILD)
+# When trying to binary match, we need to make sure the correct game ABI is generated.
+if(BINARY_MATCH)
+    target_link_libraries(gzframework PUBLIC stlport)
     # Because of differences in the version of the game engine used, the ABI doesn't match for all targets.
-    if(BUILD_PEOPLEGAME OR BUILD_PEOPLEEDITOR OR BUILD_PACKAGEINST)
-        # Build to match ABI of people simulator and people editor.
-        add_library(gzframework_people STATIC hooks/hooker.h hooks/gzhookedfuncs.cpp ${FRAMEWORK_SRC})
-        # Original game uses STLPort instead of MSVC SDK for std namespace stuff. To match ABI we need to as well.
-        # Note that this limits us to mostly C++98 level STL features.
-        target_include_directories(gzframework_people PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty/stlport ${FRAMEWORK_INCLUDES} hooks)
-        add_dependencies(gzframework_people check_git)
-        target_compile_definitions(gzframework_people PUBLIC ${FRAMEWORK_DEFINITIONS} DLL_BUILD MATCH_ABI)
-        target_link_libraries(gzframework_people PUBLIC ${FRAMEWORK_LIBS})
-        target_compile_features(gzframework_people PUBLIC cxx_std_17) # Pass the required standard down.
-    endif()
-
-    if(BUILD_HOUSEEDITOR)
-        # Build to match abi of house editor
-        add_library(gzframework_house STATIC hooks/hooker.h hooks/gzhookedfuncs.cpp ${FRAMEWORK_SRC})
-        # Original game uses STLPort instead of MSVC SDK for std namespace stuff. To match ABI we need to as well.
-        # Note that this limits us to mostly C++98 level STL features.
-        target_include_directories(gzframework_house PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty/stlport ${FRAMEWORK_INCLUDES} hooks)
-        add_dependencies(gzframework_house check_git)
-        target_compile_definitions(gzframework_house PUBLIC ${FRAMEWORK_DEFINITIONS} DLL_BUILD MATCH_ABI USE_HOUSE_ABI)
-        target_link_libraries(gzframework_house PUBLIC ${FRAMEWORK_LIBS})
-        target_compile_features(gzframework_house PUBLIC cxx_std_17) # Pass the required standard down.
-    endif()
-
-    if(BUILD_CITYGAME OR BUILD_MAPEDITOR)
-        # Build to match abi of city simulator and plot editor
-        add_library(gzframework_city STATIC hooks/hooker.h hooks/gzhookedfuncs.cpp ${FRAMEWORK_SRC})
-        # Original game uses STLPort instead of MSVC SDK for std namespace stuff. To match ABI we need to as well.
-        # Note that this limits us to mostly C++98 level STL features.
-        target_include_directories(gzframework_city PUBLIC ${CMAKE_SOURCE_DIR}/thirdparty/stlport ${FRAMEWORK_INCLUDES} hooks)
-        add_dependencies(gzframework_city check_git)
-        target_compile_definitions(gzframework_city PUBLIC ${FRAMEWORK_DEFINITIONS} DLL_BUILD MATCH_ABI USE_CITY_ABI)
-        target_link_libraries(gzframework_city PUBLIC ${FRAMEWORK_LIBS})
-        target_compile_features(gzframework_city PUBLIC cxx_std_17) # Pass the required standard down.
+    if(BUILD_PEOPLEGAME OR BUILD_PEOPLEEDITOR OR BUILD_PACKAGEINST) # TS2 or its editor and mod installer.
+        target_compile_definitions(gzframework PUBLIC MATCH_ABITS)
+    elseif(BUILD_HOUSEEDITOR) # Homecrafter, probably lowest priority.
+        target_compile_definitions(gzframework PUBLIC MATCH_ABIHC)
+    else() # SC4 or its editor.
+        target_compile_definitions(gzframework PUBLIC MATCH_ABISC)
     endif()
 endif()

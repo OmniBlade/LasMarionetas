@@ -29,57 +29,57 @@ class cRZString : public cIGZString, public std::basic_string<char, std::char_tr
 
 public:
     cRZString();
-    cRZString(const string_data &szSource);
-    cRZString(const cRZString &szSource, size_t dwStart = 0, size_t dwEnd = string_data::npos);
-    cRZString(const char *pszSource);
-    cRZString(const char *pszSource, size_t dwLen);
-    cRZString(const cIGZString &szSource);
-    cRZString(char cChar, size_t dwRepetitions);
+    cRZString(const string_data &source);
+    cRZString(const cRZString &source, size_t start = 0, size_t end = string_data::npos);
+    cRZString(const char *source);
+    cRZString(const char *source, size_t length);
+    cRZString(const cIGZString &source);
+    cRZString(char character, size_t repetitions);
 
     virtual ~cRZString() {}
 
-    virtual bool QueryInterface(uint32_t riid, void **ppvObj) override;
+    virtual bool QueryInterface(uint32_t riid, void **obj) override;
     virtual uint32_t AddRef() override;
     virtual uint32_t Release() override;
 
-    virtual void FromChar(const char *pszSource) override;
-    virtual void FromChar(const char *pszSource, uint32_t dwLength) override;
+    virtual void FromChar(const char *source) override;
+    virtual void FromChar(const char *source, uint32_t length) override;
     virtual const char *ToChar() const override;
     virtual const char *Data() const override;
 
     virtual uint32_t Strlen() const override;
     virtual bool IsEmpty() const override;
 
-    virtual bool IsEqual(const cIGZString *szOther, bool bCaseSensitive) const override;
-    virtual bool IsEqual(const cIGZString &szOther, bool bCaseSensitive) const override;
-    virtual bool IsEqual(const char *pszOther, bool bCaseSensitive) const override;
-    virtual bool IsEqual(const char *pszOther, uint32_t dwLength, bool bCaseSensitive) const override;
+    virtual bool IsEqual(const cIGZString *other, bool case_sensitive) const override;
+    virtual bool IsEqual(const cIGZString &other, bool case_sensitive) const override;
+    virtual bool IsEqual(const char *other, bool case_sensitive) const override;
+    virtual bool IsEqual(const char *other, uint32_t length, bool case_sensitive) const override;
 
-    virtual int32_t CompareTo(const cIGZString &szOther, bool bCaseSensitive) const override;
-    virtual int32_t CompareTo(const char *pszOther, bool bCaseSensitive) const override;
-    virtual int32_t CompareTo(const char *pszOther, uint32_t dwLength, bool bCaseSensitive) const override;
+    virtual int32_t CompareTo(const cIGZString &other, bool case_sensitive) const override;
+    virtual int32_t CompareTo(const char *other, bool case_sensitive) const override;
+    virtual int32_t CompareTo(const char *other, uint32_t length, bool case_sensitive) const override;
 
-    virtual cIGZString &operator=(const cIGZString &szOther) override;
+    virtual cIGZString &operator=(const cIGZString &other) override;
 
-    virtual void Copy(const cIGZString &szOther) override;
-    virtual void Resize(uint32_t dwNewSize) override;
+    virtual void Copy(const cIGZString &other) override;
+    virtual void Resize(uint32_t new_size) override;
 
-    virtual cIGZString *Append(const char *pszOther) override;
-    virtual cIGZString *Append(const char *pszOther, uint32_t dwLength) override;
-    virtual cIGZString *Append(const cIGZString &szOther) override;
-    virtual cIGZString *Insert(uint32_t dwPos, const char *pszOther, uint32_t dwLength) override;
-    virtual cIGZString *Insert(uint32_t dwPos, const cIGZString &szOther) override;
-    virtual cIGZString *Replace(uint32_t dwStartPos, const char *pszOther, uint32_t dwLength) override;
-    virtual cIGZString *Replace(uint32_t dwStartPos, const cIGZString &szOther) override;
-    virtual cIGZString *Erase(uint32_t dwStartPos, uint32_t dwEndPos) override;
+    virtual cIGZString *Append(const char *other) override;
+    virtual cIGZString *Append(const char *other, uint32_t length) override;
+    virtual cIGZString *Append(const cIGZString &other) override;
+    virtual cIGZString *Insert(uint32_t position, const char *other, uint32_t length) override;
+    virtual cIGZString *Insert(uint32_t position, const cIGZString &other) override;
+    virtual cIGZString *Replace(uint32_t start_position, const char *other, uint32_t length) override;
+    virtual cIGZString *Replace(uint32_t start_position, const cIGZString &other) override;
+    virtual cIGZString *Erase(uint32_t start_position, uint32_t end_position) override;
 
-    virtual int32_t Find(const char *pszOther, uint32_t dwPos, bool bCaseSensitive) const override;
-    virtual int32_t Find(const cIGZString &szOther, uint32_t dwPos, bool bCaseSensitive) const override;
-    virtual int32_t RFind(const char *pszOther, uint32_t dwPos, bool bCaseSensitive) const override;
-    virtual int32_t RFind(const cIGZString &szOther, uint32_t dwPos, bool bCaseSensitive) const override;
+    virtual int32_t Find(const char *other, uint32_t position, bool case_sensitive) const override;
+    virtual int32_t Find(const cIGZString &other, uint32_t position, bool case_sensitive) const override;
+    virtual int32_t RFind(const char *other, uint32_t position, bool case_sensitive) const override;
+    virtual int32_t RFind(const cIGZString &other, uint32_t position, bool case_sensitive) const override;
 
-    virtual cIGZString *Sprintf(const char *pszFormat, ...) override;
-    virtual cIGZString *SprintfVaList(const char *pszFormat, va_list zList) override;
+    virtual cIGZString *Sprintf(const char *format, ...) override;
+    virtual cIGZString *SprintfVaList(const char *format, va_list arg_list) override;
 
     void MakeLower();
     void MakeUpper();

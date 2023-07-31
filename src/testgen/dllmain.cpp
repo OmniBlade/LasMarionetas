@@ -22,7 +22,7 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved
                     freopen("CONIN$", "r", stdin);
                 }
 
-                printf("\Test Data Generator dll injected successfully and console connected.\n");
+                printf("Test Data Generator dll injected successfully and console connected.\n");
             }
             break;
 

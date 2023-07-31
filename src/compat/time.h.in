@@ -19,7 +19,17 @@
 
 /* Vodoo to extend platform time.h file. */
 #ifdef _MSC_VER
+#if _MSC_VER >= 1900
 #include <../ucrt/time.h>
+#else
+#include <../include/time.h>
+
+struct timespec
+{
+    time_t tv_sec;
+    long   tv_nsec;
+};
+#endif
 #else
 #include_next <time.h>
 #endif

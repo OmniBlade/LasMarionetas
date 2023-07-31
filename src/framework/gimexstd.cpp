@@ -48,9 +48,9 @@ uint32_t GIMEX_API gwrite(GSTREAM *stream, void *src, int32_t size)
     return count;
 }
 
-int GIMEX_API gseek(GSTREAM *stream, uint32_t pos)
+int GIMEX_API gseek(GSTREAM *stream, int32_t pos, int32_t whence)
 {
-    return pos == reinterpret_cast<cIGZFile *>(stream)->SeekToPosition(pos);
+    return pos == reinterpret_cast<cIGZFile *>(stream)->SeekToPosition((uint32_t)pos);
 }
 
 int64_t GIMEX_API glen(GSTREAM *stream)

@@ -7,6 +7,32 @@
     },
     "configurePresets": [
         {
+            "name": "bin-exact-ts2",
+            "displayName": "TS2 Binary Matching NMake",
+            "generator": "NMake Makefiles",
+            "hidden": false,
+            "binaryDir": "${sourceDir}/build-matchts2",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "BUILD_PEOPLEGAME": "ON",
+                "BUILD_CITYGAME": "OFF",
+                "BUILD_PEOPLEEDITOR": "ON",
+                "BUILD_HOUSEEDITOR": "OFF",
+                "BUILD_PLOTEDITOR": "OFF",
+                "BUILD_PACKAGEINST": "ON",
+                "BUILD_PLUGIN": "ON",
+                "BUILD_TESTS": "OFF",
+                "BUILD_CLIUTILS": "ON",
+                "STANDALONE": "ON",
+                "CMAKE_MSVC_RUNTIME_LIBRARY": "MultiThreaded",
+                "CMAKE_C_FLAGS": "-DWIN32 -D_WINDOWS -Dinline=__inline -W0 -DNDEBUG -DBINARY_MATCH",
+                "CMAKE_CXX_FLAGS": "-DWIN32 -D_WINDOWS -Dnullptr=NULL -Doverride= -Dconstexpr=const -GR -EHsc -W0 -DNDEBUG -DBINARY_MATCH",
+                "CMAKE_C_FLAGS_RELEASE": "-Zi",
+                "CMAKE_CXX_FLAGS_RELEASE": "-Zi",
+                "MARIONETAS_CXX_FLAGS": "-O1;-Gf;-Gm-;-Oy-"
+            }
+        },
+        {
             "name": "default",
             "displayName": "Default Config",
             "generator": "Ninja",
@@ -92,6 +118,9 @@
             "environment": {
                 "CC": "gcc",
                 "CXX": "g++"
+            },
+            "cacheVariables": {
+                "MARIONETAS_CXX_FLAGS": "-Wall"
             }
         },
         {
@@ -101,6 +130,9 @@
             "environment": {
                 "CC": "clang",
                 "CXX": "clang++"
+            },
+            "cacheVariables": {
+                "MARIONETAS_CXX_FLAGS": "-Wall -Wno-unused-private-field -Wno-#pragma-messages"
             }
         }
     ]

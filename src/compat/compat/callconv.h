@@ -5,7 +5,7 @@
  *
  * @brief Masks differences between compilers definitions of calling conventions.
  *
- * @copyright Compat is free software: you can redistribute it and/or
+ * @copyright Las Marionetas is free software: you can redistribute it and/or
  *            modify it under the terms of the GNU General Public License
  *            as published by the Free Software Foundation, either version
  *            3 of the License, or (at your option) any later version.
@@ -48,6 +48,10 @@
 #define stdcall_abi
 #endif
 #endif
+
+#ifndef weak_symbol
+#define weak_symbol
+#endif
 #else
 #ifndef fastcall_abi
 #if __has_attribute(fastcall) && defined __i386__
@@ -70,6 +74,14 @@
 #define stdcall_abi __attribute__((stdcall))
 #else
 #define stdcall_abi
+#endif
+#endif
+
+#ifndef weak_symbol
+#if __has_attribute(weak)
+#define weak_symbol __attribute__((weak))
+#else
+#define weak_symbol
 #endif
 #endif
 #endif /* defined _MSC_VER */

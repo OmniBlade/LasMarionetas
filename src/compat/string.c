@@ -5,7 +5,7 @@
  *
  * @brief Some extra string manipulation functions not present in all standard CRTs
  *
- * @copyright StdCompat is free software: you can redistribute it and/or
+ * @copyright Las Marionetas is free software: you can redistribute it and/or
  *            modify it under the terms of the GNU General Public License
  *            as published by the Free Software Foundation, either version
  *            3 of the License, or (at your option) any later version.
@@ -123,6 +123,7 @@ size_t strlcat(char *dst, const char *src, size_t dsize)
     return (dlen + (src - osrc)); /* count does not include NUL */
 }
 #endif
+
 
 #ifndef HAVE_STRLCPY
 size_t strlcpy(char *dst, const char *src, size_t dsize)

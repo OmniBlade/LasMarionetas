@@ -4,6 +4,8 @@ if(TARGET gzframework_people)
         main.cpp
         dllmain.cpp
         hookedfuncs.cpp
+        genconvertstring.cpp
+        genconvertstring.h
         genrandom.cpp
         genrandom.h
     )

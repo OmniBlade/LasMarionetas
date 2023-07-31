@@ -14,7 +14,7 @@
 #include "igzunknown.h"
 
 class cIGZCOM;
-class cIGZFrameWork;
+class cIGZFramework;
 class cIGZString;
 
 static constexpr uint32_t GZIID_cIGZCOMDirector = 0xA21EE941;
@@ -29,7 +29,7 @@ static constexpr uint32_t GZIID_cIGZCOMDirector = 0xA21EE941;
 class cIGZCOMDirector : public cIGZUnknown
 {
 public:
-    typedef void (*ClassObjectEnumerationCallback)(uint32_t clsid, uint32_t reserved, void *context);
+    typedef void (*ClassObjectEnumerationCallback)(uint32_t clsid, uint32_t version, void *context);
 
     /**
      * @brief Initializes the director with the given parameters
@@ -47,6 +47,9 @@ public:
      * @brief Iterates over the director's class objects with the callback
      * @param callback The function to use when iterating over class IDs
      * @param context Arbitrary data to pass as a void pointer
+     *
+     * By adjusting the version passed to the callback when overriding this method, a custom director can override the
+     * provisioning of existing class IDs in the standard GZCOM class implementation.
      */
     virtual void EnumClassObjects(ClassObjectEnumerationCallback callback, void *context) = 0;
     /**
@@ -72,7 +75,7 @@ public:
     /**
      * @return A reference to the GZCOM framework
      */
-    virtual cIGZFrameWork *FrameWork() = 0;
+    virtual cIGZFramework *FrameWork() = 0;
     /**
      * @return A reference to the GZCOM itself
      */

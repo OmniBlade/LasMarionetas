@@ -21,7 +21,7 @@ template<class T, uint32_t riid, uint32_t srvid> class cRZSysServPtr
 public:
     cRZSysServPtr() : mpService(nullptr)
     {
-        cIGZFrameWork *frame_work = RZGetFrameWork();
+        cIGZFramework *frame_work = RZGetFrameWork();
         if (frame_work) {
             frame_work->GetSystemService(srvid, riid, (void **)&mpService);
         }

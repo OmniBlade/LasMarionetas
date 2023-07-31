@@ -159,8 +159,6 @@ static int PNG_write_gimex(png_structp png_ptr, png_infop info_ptr, const GINFO 
     row_buff = row_ptr = galloc(row_byte_count * info->height);
 
     if (row_buff != NULL) {
-        int row_pos = 0;
-
         /* Set our row pointers */
         for (int i = 0; i < info->height; ++i) {
             rows[i] = row_ptr;
@@ -241,7 +239,7 @@ int GIMEX_API PNG_is(GSTREAM *stream)
 {
     uint8_t buff[8];
 
-    gseek(stream, 0);
+    gseek(stream, 0, GSEEK_SET);
     gread(stream, buff, 8);
 
     if (png_sig_cmp(buff, 0, 8) == 0) {
@@ -275,7 +273,7 @@ int GIMEX_API PNG_open(GINSTANCE **ctx, GSTREAM *stream, const char *unk1, bool 
                 png_set_read_fn(png_ctx->png_ptr, stream, PNG_read_data);
 
                 if (!setjmp(png_jmpbuf(png_ctx->png_ptr))) {
-                    gseek(stream, 0);
+                    gseek(stream, 0, GSEEK_SET);
                     png_read_info(png_ctx->png_ptr, png_ctx->info_ptr);
                     inst->frames = 1;
                     inst->frame_num = 0;
@@ -343,7 +341,6 @@ GINFO *GIMEX_API PNG_info(GINSTANCE *ctx, int frame)
     GINFO *info = galloc(sizeof(GINFO));
 
     if (info != NULL) {
-        png_infop info_ptr = png_ctx->info_ptr;
         int src_bitdepth;
         int color_bits;
         int text_size;
@@ -469,7 +466,7 @@ int GIMEX_API PNG_read(GINSTANCE *ctx, GINFO *info, char *buffer, int pitch)
         png_set_read_fn(png_ptr, ctx->stream, PNG_read_data);
 
         if (!setjmp(png_jmpbuf(png_ptr))) {
-            gseek(ctx->stream, 0);
+            gseek(ctx->stream, 0, GSEEK_SET);
             png_read_info(png_ptr, info_ptr);
         }
 

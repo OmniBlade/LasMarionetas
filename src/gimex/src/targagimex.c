@@ -443,7 +443,7 @@ int GIMEX_API TGA_is(GSTREAM *stream)
 {
     TGAHeader header;
 
-    gseek(stream, 0);
+    gseek(stream, 0, GSEEK_SET);
 
     if (!gread(stream, &header, sizeof(header))) {
         return 0;
@@ -519,7 +519,6 @@ GINFO *GIMEX_API TGA_info(GINSTANCE *ctx, int frame)
     int32_t width = 0;
     int32_t height = 0;
     int32_t bpp = 0;
-    int32_t ppm = 0;
     int32_t type = TGA_TYPE_NONE;
     int32_t compressed = 0;
     int32_t cmap_start = 0;
@@ -531,7 +530,7 @@ GINFO *GIMEX_API TGA_info(GINSTANCE *ctx, int frame)
     uint32_t colors = 0;
     uint32_t image_size;
 
-    gseek(ctx->stream, 0);
+    gseek(ctx->stream, 0, GSEEK_SET);
     image_size = (uint32_t)glen(ctx->stream);
 
     if (!gread(ctx->stream, &header, sizeof(header))) {
@@ -571,7 +570,7 @@ GINFO *GIMEX_API TGA_info(GINSTANCE *ctx, int frame)
         alpha_bits = 8;
     }
 
-    gseek(ctx->stream, header.id_length + sizeof(header));
+    gseek(ctx->stream, header.id_length + sizeof(header), GSEEK_SET);
 
     if (type == TGA_TYPE_MAPPED) {
         colors = cmap_length;
@@ -728,14 +727,11 @@ int GIMEX_API TGA_read(GINSTANCE *ctx, GINFO *info, char *buffer, int pitch)
     int32_t width = 0;
     int32_t height = 0;
     int32_t bpp = 0;
-    int32_t ppm = 0;
-    int32_t type = TGA_TYPE_NONE;
-    int32_t compressed = 0;
     int32_t offset = 0;
     int32_t actual_bpp = 0;
     int retval = 0;
 
-    gseek(ctx->stream, 0);
+    gseek(ctx->stream, 0, GSEEK_SET);
 
     if (!gread(ctx->stream, &header, sizeof(header))) {
         return 0;
@@ -750,7 +746,7 @@ int GIMEX_API TGA_read(GINSTANCE *ctx, GINFO *info, char *buffer, int pitch)
         offset += le32toh(header.cmap_length) * ((header.cmap_depth + 7) / 8);
     }
 
-    retval = gseek(ctx->stream, offset);
+    retval = gseek(ctx->stream, offset, GSEEK_SET);
 
     /* Handle the row order of the image data */
     if (header.image_descriptor & 0x20) {

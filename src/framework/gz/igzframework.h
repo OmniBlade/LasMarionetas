@@ -14,16 +14,16 @@
 
 #include "igzunknown.h"
 
-static constexpr uint32_t GZIID_cIGZFrameWork = 0x00000065;
+static constexpr uint32_t GZIID_cIGZFramework = 0x00000065;
 
 class cIGZApp;
 class cIGZCOM;
 class cIGZExceptionNotification;
-class cIGZFrameWorkHooks;
+class cIGZFrameworkHooks;
 class cIGZSystemService;
 class cIGUnknownEnumerator;
 
-class cIGZFrameWork : public cIGZUnknown
+class cIGZFramework : public cIGZUnknown
 {
 public:
     enum FrameworkState
@@ -72,12 +72,12 @@ public:
     /**
      * @brief Subscribes an object to framework event callbacks.
      */
-    virtual bool AddHook(cIGZFrameWorkHooks *hooks) = 0;
+    virtual bool AddHook(cIGZFrameworkHooks *hooks) = 0;
 
     /**
      * @brief Unsubscribes an object from framework event callbacks.
      */
-    virtual bool RemoveHook(cIGZFrameWorkHooks *hooks) = 0;
+    virtual bool RemoveHook(cIGZFrameworkHooks *hooks) = 0;
 
     /**
      * @brief Activates the on-tick event for a system service.
@@ -133,7 +133,7 @@ public:
      * @param tick Whether to enable tick events or not.
      * @return Pointer to the current object.
      */
-    virtual cIGZFrameWork *ToggleTick(bool tick) = 0;
+    virtual cIGZFramework *ToggleTick(bool tick) = 0;
 
     /**
      * @brief Prepares the game for shutdown for the given reason
@@ -199,8 +199,8 @@ public:
 };
 
 /**
- * @brief Obtains the cIGZFrameWork interface from the application/dll.
+ * @brief Obtains the cIGZFramework interface from the application/dll.
  *
  * This function should be implemented in the application code.
  */
-cIGZFrameWork *RZGetFrameWork();
+cIGZFramework *RZGetFramework();

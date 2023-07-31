@@ -1,21 +1,17 @@
 # Dependency libs needed to build the engine.
 add_subdirectory(compat)
+
+#Set by compat
+if(BINARY_MATCH)
+    add_subdirectory(${CMAKE_SOURCE_DIR}/thirdparty/stlport ${CMAKE_BINARY_DIR}/thirdparty/stlport)
+endif()
+
 add_subdirectory(codex)
 add_subdirectory(gimex)
-
-# A fake d3d9.dll that injects a custom dll into the game related binaries.
-if(DLLBUILD)
-    add_subdirectory(hookproxy)
-endif()
+add_subdirectory(allocator)
 
 # The core app framework shared by all targets.
 add_subdirectory(framework)
-
-# A dll to use with the people simulator game to generate
-# reference data for testing reimplementation correctness.
-if(DLLBUILD)
-    add_subdirectory(testgen)
-endif()
 
 # The games/editors themselves.
 if(BUILD_PEOPLEGAME)

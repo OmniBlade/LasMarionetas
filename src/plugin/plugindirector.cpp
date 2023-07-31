@@ -1,3 +1,4 @@
+#define PLUGIN_DLL 1
 #include "igzframework.h"
 #include "rzcomdlldirector.h"
 
@@ -24,19 +25,6 @@ BOOL WINAPI DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved
 #define DEMOMSG(x) ((void)0)
 #endif
 
-/**
- * @brief The game expects to be able to find and call this function as part of loading a GZ/RZ plugin.
- */
-extern "C" cIGZCOMDirector *GZDllGetGZCOMDirector()
-{
-    return static_cast<cIGZCOMDirector *>(RZGetCOMDllDirector());
-}
-
-cIGZFrameWork *RZGetFrameWork()
-{
-    return RZGetCOMDllDirector()->FrameWork();
-}
-
 constexpr uint32_t kPluginDLLDirectorID = 0x12E4369E;
 
 class PluginDLLDirector : public cRZCOMDllDirector
@@ -55,7 +43,7 @@ public:
     virtual bool OnStart(cIGZCOM *pCOM) override
     {
         DEMOMSG(__CURRENT_FUNCTION__);
-        RZGetFrameWork()->AddHook(static_cast<cIGZFrameWorkHooks *>(this));
+        RZGetFramework()->AddHook(static_cast<cIGZFrameworkHooks *>(this));
         return true;
     }
 

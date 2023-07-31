@@ -22,6 +22,7 @@ class cIGZVariant;
 
 class cIGZOStream : public cIGZUnknown
 {
+public:
     /**
      * @brief Flush any pending data to the stream.
      */

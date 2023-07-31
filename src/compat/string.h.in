@@ -25,7 +25,11 @@
 
 /* Vodoo to extend platform string.h file. */
 #ifdef _MSC_VER
+#if _MSC_VER >= 1900
 #include <../ucrt/string.h>
+#else
+#include <../include/string.h>
+#endif
 #else
 #include_next <string.h>
 #endif

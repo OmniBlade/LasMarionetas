@@ -13,14 +13,14 @@
 #pragma once
 #include "igzunknown.h"
 
-static constexpr uint32_t GZIID_cIGZFrameWorkHooks = 0x03FA40BF;
+static constexpr uint32_t GZIID_cIGZFrameworkHooks = 0x03FA40BF;
 
 /**
  * @brief An interface for framework hook event subscribers.
  *
  * These are hooks that will be called by the application framework at various points in the objects lifetime.
  */
-class cIGZFrameWorkHooks : public cIGZUnknown
+class cIGZFrameworkHooks : public cIGZUnknown
 {
 public:
     virtual bool PreFrameWorkInit() = 0;

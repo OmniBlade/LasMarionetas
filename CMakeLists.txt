@@ -13,11 +13,15 @@ if(MSVC)
     set(MSVC_INCREMENTAL_DEFAULT ON)
 endif()
 
-project(lasmarionetas VERSION 1.00.0 LANGUAGES C CXX)
+project(lasmarionetas VERSION 1.00.0 LANGUAGES C CXX ASM)
 
 # We don't support in tree builds, so help people make the right choice.
 if (CMAKE_BINARY_DIR STREQUAL CMAKE_SOURCE_DIR)
     message(FATAL_ERROR "Building in-source is not supported! Create a build dir and remove ${CMAKE_SOURCE_DIR}/CMakeCache.txt")
+endif()
+
+if(WIN32 OR "${CMAKE_SYSTEM}" MATCHES "Windows")
+    set(WINDOWS BOOL TRUE)
 endif()
 
 include(FeatureSummary)

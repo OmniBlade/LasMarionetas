@@ -9,6 +9,8 @@ check_include_file(getopt.h HAVE_GETOPT_H)
 check_include_file(unistd.h HAVE_UNISTD_H)
 check_include_file(dlfcn.h HAVE_DLFCN_H)
 check_include_file(sys/time.h HAVE_SYS_TIME_H)
+check_include_file(stdint.h HAVE_STDINT_H)
+check_include_file(stdbool.h HAVE_STDBOOL_H)
 
 include(CheckSymbolExists)
 
@@ -25,14 +27,27 @@ check_symbol_exists(clock_gettime "time.h" HAVE_CLOCKGETTIME)
 configure_file(time.h.in time.h @ONLY)
 
 add_library(compat STATIC)
+target_compile_options(compat PUBLIC ${MARIONETAS_CXX_FLAGS})
 
 if(WIN32)
     target_compile_definitions(compat PUBLIC _CRT_SECURE_NO_WARNINGS WIN32_LEAN_AND_MEAN)
+
+    if("${CMAKE_CXX_COMPILER_ID}" MATCHES "MSVC")
+        if(CMAKE_CXX_COMPILER_VERSION VERSION_EQUAL "13.10.3077")
+            set(BINARY_MATCH TRUE PARENT_SCOPE)
+            target_compile_definitions(compat PUBLIC BINARY_MATCH)
+        elseif(CMAKE_CXX_COMPILER_VERSION VERSION_LESS "16.0.0")
+            message(FATAL_ERROR "Las Marionetas does not support this version of MSVC.")
+        else()
+            target_compile_features(compat PUBLIC cxx_std_17 c_std_11) # Pass the required standard down.
+        endif()
+    endif()
 endif()
 
 target_sources(compat PRIVATE
     compat/aliasing.h
     compat/callconv.h
+    compat/cpuid.h
     compat/endianness.h
     compat/rotate.h
     string.c
@@ -81,4 +96,14 @@ endif()
 if(NOT HAVE_SYS_TIME_H)
     target_sources(compat PRIVATE systime/time.c systime/sys/time.h)
     target_include_directories(compat PUBLIC systime)
+endif()
+
+if(NOT HAVE_STDINT_H)
+    target_sources(compat PRIVATE stdint/stdint.h stdint/inttypes.h)
+    target_include_directories(compat PUBLIC stdint)
+endif()
+
+if(NOT HAVE_STDBOOL_H)
+    target_sources(compat PRIVATE stdbool/stdbool.h)
+    target_include_directories(compat PUBLIC stdbool)
 endif()

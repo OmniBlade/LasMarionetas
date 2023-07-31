@@ -123,6 +123,8 @@ int GIMEX_API GIMEX_find(const char *formats, int *format_index)
     char ext_buffer[1024];
     char *put_ptr = ext_buffer;
     int gimex_format = 0;
+    int i;
+    int j;
 
     if (*formats == '-' || *formats == '+' || *formats == '.') {
         ++get_ptr;
@@ -142,12 +144,12 @@ int GIMEX_API GIMEX_find(const char *formats, int *format_index)
         };
         *put_ptr = '\0';
 
-        for (int i = 0; i < GIMEX_EXTENSIONS; ++i) {
+        for (i = 0; i < GIMEX_EXTENSIONS; ++i) {
             if (current_best >= 4) {
                 break;
             }
 
-            for (int j = 1; j < GIMEX_max(); ++j) {
+            for (j = 1; j < GIMEX_max(); ++j) {
                 GABOUT *about;
 
                 if (current_best >= 4) {

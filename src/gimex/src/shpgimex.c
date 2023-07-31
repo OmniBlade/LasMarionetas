@@ -21,7 +21,7 @@ int GIMEX_API FSH_is(GSTREAM *stream)
 {
     SHAPEHEADERDIR header;
 
-    gseek(stream, 0);
+    gseek(stream, 0, GSEEK_SET);
 
     if (gread(stream, &header, sizeof(header)) == sizeof(header)) {
         uint32_t fourcc = be32toh(header.mHeader.mnFourCC);

@@ -40,15 +40,17 @@ char *basename(char *path)
     setlocale(LC_CTYPE, "");
 
     if (path && *path) {
+        wchar_t *refcopy;
+        wchar_t *refpath;
         /* allocate sufficient local storage space,
          * in which to create a wide character reference copy of path
          */
         len = mbstowcs(NULL, path, 0);
-        wchar_t *refcopy = malloc(sizeof(wchar_t) * (1 + len));
+        refcopy = malloc(sizeof(wchar_t) * (1 + len));
         /* create the wide character reference copy of path,
          * and step over the drive designator, if present ...
          */
-        wchar_t *refpath = refcopy;
+        refpath = refcopy;
 
         if ((len = mbstowcs(refpath, path, len)) > 1 && refpath[1] == L':') {
             /* FIXME: maybe should confirm *refpath is a valid drive designator */
@@ -137,12 +139,14 @@ char *dirname(char *path)
     setlocale(LC_CTYPE, "");
 
     if (path && *path) {
+        wchar_t *refcopy;
+        wchar_t *refpath;
         /* allocate sufficient local storage space,
          * in which to create a wide character reference copy of path.  */
         len = mbstowcs(NULL, path, 0);
-        wchar_t *refcopy = malloc(sizeof(wchar_t) * (1 + len));
+        refcopy = malloc(sizeof(wchar_t) * (1 + len));
         /* create the wide character reference copy of path */
-        wchar_t *refpath = refcopy;
+        refpath = refcopy;
 
         len = mbstowcs(refpath, path, len);
         refcopy[len] = L'\0';

@@ -22,6 +22,7 @@ class cIGZVariant;
 
 class cIGZIStream : public cIGZUnknown
 {
+public:
     /**
      * @brief Skip data in the stream.
      * @param size The amount of data in bytes to skip.

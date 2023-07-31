@@ -53,6 +53,16 @@ extern "C" {
 #define GIMEX_LONGTYPESTR_SIZE 32
 #define GIMEX_ID(a, b, c, d) ((((int)(a)) << 24) | (((int)(b)) << 16) | (((int)(c)) << 8) | (int)(d))
 
+#define GSEEK_SET 0
+
+#ifndef gmin
+#define gmin(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
+#ifndef gmax
+#define gmax(a, b) ((a) > (b) ? (a) : (b))
+#endif
+
 /* Opaque file handle, exact definition defined by application */
 typedef struct GSTREAM GSTREAM;
 
@@ -104,7 +114,7 @@ typedef struct GABOUT
     unsigned obsolete : 1;
     unsigned large_files : 1;
     unsigned first_extension : 1;
-    unsigned unused3;
+    unsigned unused3 : 1;
     int max_colors;
     int max_frame_name;
     int default_quality;
@@ -206,7 +216,7 @@ uint32_t GIMEX_API gwrite(GSTREAM *stream, void *src, int32_t size);
  * @param pos Position in the stream to seek to.
  * @return Was the seek successful? 0 if not.
  */
-int GIMEX_API gseek(GSTREAM *stream, uint32_t pos);
+int GIMEX_API gseek(GSTREAM *stream, int32_t pos, int32_t whence);
 /**
  * @brief Get the length of a stream.
  * @param stream Stream to query.
