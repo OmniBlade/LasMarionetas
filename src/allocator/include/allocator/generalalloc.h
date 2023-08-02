@@ -37,7 +37,19 @@ class GeneralAllocator
 public:
     enum OptionsType
     {
-        kOptionEnableThreadSafety
+        kOptionEnableThreadSafety,
+        kOptionEnableHighAllocation,
+        kOptionEnableSystemAlloc,
+        kOptionNewCoreSize,
+        kOptionCoreIncrementSize,
+        kOptionMaxFastBinRequestSize,
+        kOptionTrimThreshold,
+        kOptionTopPad,
+        kOptionMMapThreshold,
+        kOptionMMapMaxAllowed,
+        kOptionMMapTopDown,
+        kOptionTraceInternalMemory,
+        kOptionMaxMallocFailureCount,
     };
 
     enum HookType
@@ -58,6 +70,23 @@ public:
         kHookSubTypeMallocAligned,
         kHookSubTypeMallocMultiple1,
         kHookSubTypeMallocMultiple2
+    };
+
+    enum AllocationFlags
+    {
+        kAllocationFlagNone = 0x00000000,
+        kAllocationFlagLow = 0x00000000,
+        kAllocationFlagHigh = 0x00000001,
+        kAllocationFlagPerm = 0x00000001,
+        kAllocationFlagEndFit = 0x00000002,
+        kAllocationFlagBestFit = 0x00000004,
+        kAllocationFlagMMap = 0x00000008,
+        kAllocationFlagReserved = 0xff000000,
+        kAllocationFlagRetry = 0x40000000,
+        kAllocationFlagInternal = 0x80000000,
+        kAllocationFlagAvoidTopChunk = 0x00000100,
+        kAllocationFlagUseTopChunk = 0x00000200,
+        kAllocationFlagAlwaysAlign = 0x00000400,
     };
 
     struct HookInfo
@@ -147,6 +176,30 @@ protected:
         void *mpCoreFreeFunctionContext;
         CoreBlock *mpPrevCoreBlock;
         CoreBlock *mpNextCoreBlock;
+    };
+
+    struct Snapshot
+    {
+        enum
+        {
+            kSnapshotMagicNumber = 0x534E4150
+        };
+
+        int mnMagicNumber;
+        size_t mnSizeOfThis;
+        int mnBlockTypeFlags;
+        bool mbUserAllocated;
+        bool mbReport;
+        bool mbDynamic;
+        bool mbCoreBlockReported;
+        CoreBlock *mpCurrentCoreBlock;
+        Chunk *mpCurrentChunk;
+        Chunk *mpCurrentMChunk;
+        size_t mnBlockInfoCount;
+        size_t mnBlockInfoIndex;
+        BlockInfo mBlockInfo[1];
+
+        Snapshot(size_t nSizeOfThis, int nBlockTypeFlags);
     };
 
     static constexpr size_t kMinChunkSize = sizeof(Chunk);
@@ -248,7 +301,7 @@ public:
     alloc_virtual void SetMallocFailureFunction(MallocFailureFunction pMallocFailureFunction, void *pContext);
     alloc_virtual void SetHookFunction(HookFunction pHookFunction, void *pContext);
     alloc_virtual void SetOption(int32_t option, int32_t nValue);
-    alloc_virtual size_t GetUsableSize(const void *pData);
+    alloc_virtual size_t GetUsableSize(const void *pData) const;
     alloc_virtual size_t GetBlockSize(const void *pData, bool bNetSize = false);
     alloc_virtual size_t GetLargestFreeBlock(bool bClearCache = false);
     alloc_virtual void SetTraceFunction(TraceFunction pTraceFunction, void *pContext);
@@ -261,13 +314,13 @@ public:
         size_t nStorageSize = 0,
         int32_t nBlockTypeFlags = kBlockTypeAllocated);
     alloc_virtual size_t DescribeData(const void *pData, char *pBuffer, size_t nBufferLength);
-    alloc_virtual const void *ValidateAddress(const void *pAddress, int32_t addressType = kAddressTypeAllocated) const;
+    alloc_virtual bool ValidateAddress(const void *pAddress, bool addressType = false) const;
     alloc_virtual bool UnknownFunc();
     alloc_virtual bool IsAddressHigh(const void *pAddress);
     alloc_virtual void *TakeSnapshot(
         int32_t nBlockTypeFlags = kBlockTypeAll, bool bMakeCopy = false, void *pStorage = nullptr, size_t nStorageSize = 0);
     alloc_virtual void FreeSnapshot(void *pSnapshot);
-    alloc_virtual bool ReportHeap(HeapReportFunction,
+    alloc_virtual bool ReportHeap(HeapReportFunction pHeapReportFunction,
         void *pContext,
         int32_t nBlockTypeFlags,
         bool bMakeCopy = false,
@@ -302,7 +355,7 @@ protected:
     alloc_virtual void ClearFastBins();
     alloc_virtual void LinkCoreBlock(CoreBlock *pCoreBlock, CoreBlock *pNext);
     alloc_virtual void UnlinkCoreBlock(CoreBlock *pCoreBlock);
-    alloc_virtual CoreBlock *FindCoreBlockForAddress(const void *pAddress);
+    alloc_virtual CoreBlock *FindCoreBlockForAddress(const void *pAddress) const;
     alloc_virtual int32_t CheckChunk(const Chunk *pChunk);
     alloc_virtual int32_t CheckFreeChunk(const Chunk *pChunk);
     alloc_virtual int32_t CheckUsedChunk(const Chunk *pChunk);
@@ -315,6 +368,8 @@ protected:
     alloc_virtual DataPreviewType GetDataPreview(
         const void *pData, size_t nDataSize, char *pBuffer, wchar_t *pBufferW, size_t nBufferLength);
 
+    void GetBlockInfoForCoreBlock(const CoreBlock *pCoreBlock, BlockInfo *pBlockInfo) const;
+    void GetBlockInfoForChunk(const Chunk *pChunk, BlockInfo *pBlockInfo) const;
     void SetNewTopChunk(Chunk *pChunk, bool bFreePreviousTopChunk);
     Chunk *GetBin(int32_t nIndex) const
     {
@@ -338,12 +393,38 @@ protected:
         }
     }
     size_t GetFastBinChunksExist() const { return mnMaxFastBinChunkSize & kFlagFastBinChunksExist; }
-    size_t GetMMapChunkSizeFromDataSize(size_t nDataSize)
+
+    static size_t GetMMapChunkSizeFromDataSize(size_t nDataSize)
     {
         const size_t kPageMask = 0xFFF;
         return size_t((kChunkInternalHeaderSize + nDataSize + kMinChunkSize + kMinAlignmentMask + kPageMask) & ~kPageMask);
     }
+    static Chunk *GetFenceChunk(const CoreBlock *pCoreBlock)
+    {
+        return (Chunk *)(uintptr_t)(((uintptr_t)pCoreBlock + pCoreBlock->mnSize) - kDoubleFenceChunkSize);
+    }
+    static size_t GetPrevChunkIsInUse(const Chunk *pChunk) { return pChunk->mnSize & kChunkFlagPrevInUse; }
+    static size_t GetChunkIsInUse(const Chunk *pChunk)
+    {
+        const Chunk *const pNextChunk = (Chunk *)(uintptr_t)((uintptr_t)pChunk + (pChunk->mnSize & kChunkSizeMask));
+        return (pNextChunk->mnSize & kChunkFlagPrevInUse);
+    }
+    static size_t GetChunkIsInternal(const Chunk *pChunk) { return pChunk->mnSize & kChunkFlagInternal; }
+    static Chunk *GetNextChunk(const Chunk *pChunk)
+    {
+        return (Chunk *)(uintptr_t)((uintptr_t)pChunk + (pChunk->mnSize & kChunkSizeMask));
+    }
+    static Chunk *GetPrevChunk(const Chunk *pChunk) { return (Chunk *)((uintptr_t)pChunk - pChunk->mnPriorSize); }
 
+    static Chunk *GetChunkPtrFromDataPtr(const void *pData)
+    {
+        return (Chunk *)(uintptr_t)((uintptr_t)pData - kDataPtrOffset);
+    }
+    static void *GetPostHeaderPtrFromChunkPtr(const Chunk *pChunk)
+    {
+        return (char *)pChunk + sizeof(Chunk);
+    }
+    static size_t GetChunkIsMMapped(const Chunk *pChunk) { return (pChunk->mnSize & kChunkFlagMMapped); }
     static size_t GetChunkSizeFromDataSize(size_t nDataSize)
     {
         const size_t sum = size_t(nDataSize + (kDataPtrOffset - kSizeTypeSize) + kMinAlignmentMask);
@@ -358,7 +439,7 @@ protected:
     {
         return reinterpret_cast<Chunk *>(uintptr_t(pChunk) - pChunk->mnPriorSize);
     }
-    static void *GetDataPtrFromChunkPtr(Chunk *pChunk) { return reinterpret_cast<char *>(pChunk) + kDataPtrOffset; }
+    static void *GetDataPtrFromChunkPtr(const Chunk *pChunk) { return (char *)(pChunk) + kDataPtrOffset; }
     static void *AlignUp(const void *ptr, size_t nAlignment)
     {
         return reinterpret_cast<void *>((uintptr_t(ptr) + (nAlignment - 1)) & ~(nAlignment - 1));
@@ -374,7 +455,9 @@ protected:
     {
         pChunk->mnSize = ((pChunk->mnSize & kChunkFlagAll) | nSize);
     }
+    static void SetChunkIsInternal(Chunk *pChunk) { pChunk->mnSize |= kChunkFlagInternal; }
     static size_t GetChunkSize(const Chunk *pChunk) { return pChunk->mnSize & kChunkSizeMask; }
+    static size_t GetChunkIsFastBin(const Chunk *pChunk) { return (pChunk->mnSize & kChunkFlagFastBin); }
     static Chunk *GetChunkAtOffset(const Chunk *pChunk, ptrdiff_t nOffset)
     {
         return reinterpret_cast<Chunk *>(uintptr_t(pChunk) + nOffset);
@@ -395,6 +478,7 @@ protected:
     static void TraceFunctionDefault(char const *desc, void *ctx);
     static void AddDoubleFencepost(Chunk *pChunk, size_t nPrevChunkFlags);
     static Chunk *MakeChunkFromCore(void *pCore, size_t nCoreSize, size_t nFlags);
+    static int32_t ChunkMatchesBlockType(const Chunk *pChunk, int32_t nBlockTypeFlags);
 
 protected:
     bool mbInitialized;

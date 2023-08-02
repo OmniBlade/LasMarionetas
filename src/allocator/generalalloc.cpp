@@ -14,10 +14,27 @@
 #include "allocator/allocmutex.h"
 #include <cstdlib>
 #include <cstring>
+#include <new>
 #include <unistd.h>
 
 namespace Allocator
 {
+GeneralAllocator::Snapshot::Snapshot(size_t nSizeOfThis, int nBlockTypeFlags)
+{
+    memset(this, 0, nSizeOfThis);
+    mnMagicNumber = kSnapshotMagicNumber;
+    mnSizeOfThis = nSizeOfThis;
+    mnBlockTypeFlags = nBlockTypeFlags;
+    mbUserAllocated = false;
+    mbReport = false;
+    mbDynamic = false;
+    mbCoreBlockReported = false;
+    mpCurrentCoreBlock = NULL;
+    mpCurrentChunk = NULL;
+    mpCurrentMChunk = NULL;
+    mnBlockInfoCount = 0;
+    mnBlockInfoIndex = 0;
+}
 
 GeneralAllocator::GeneralAllocator(void *pInitialCore,
     size_t nInitialCoreSize,
@@ -318,7 +335,7 @@ bool GeneralAllocator::AddCore(void *pCore,
             pCoreBlock->mnReservedSize = core_size;
             pCoreBlock->mbMMappedMemory = false;
             LinkCoreBlock(pCoreBlock, &mHeadCoreBlock);
-#if ALLOCATOR_USEHOOKS
+#ifdef ALLOCATOR_USEHOOKS
             if (mpHookFunction) {
                 const HookInfo hookInfo = { this,
                     false,
@@ -366,90 +383,687 @@ bool GeneralAllocator::AddCore(void *pCore,
 
 size_t GeneralAllocator::TrimCore(size_t nPadding)
 {
-    return 0;
+    PPMAutoMutex lock(mpMutex);
+
+    size_t nCoreTrimmed = 0;
+
+    for (CoreBlock *pCoreBlock = mHeadCoreBlock.mpPrevCoreBlock; pCoreBlock != &mHeadCoreBlock;
+         pCoreBlock = pCoreBlock->mpPrevCoreBlock) {
+        if (pCoreBlock->mbShouldFree) {
+            const Chunk *const pFenceChunk = GetFenceChunk(pCoreBlock);
+
+            if (!GetPrevChunkIsInUse(pFenceChunk)) {
+                Chunk *const pHighestChunk = GetPrevChunk(pFenceChunk);
+#ifndef _WIN32 // TODO, found in ARM Fifa binary but is newer version of code with extra functionality.
+                if ((char *)pHighestChunk < ((char *)pCoreBlock->mpCore + kMinChunkSize)) {
+#ifdef ALLOCATOR_USEHOOKS
+                    if (mpHookFunction) {
+                        const HookInfo hookInfo = { this,
+                            true,
+                            kHookTypeCoreFree,
+                            kHookSubTypeNone,
+                            pCoreBlock->mnSize,
+                            pCoreBlock->mpCore,
+                            0,
+                            pCoreBlock->mnSize,
+                            NULL,
+                            0,
+                            0,
+                            NULL,
+                            NULL,
+                            pCoreBlock->mnSize,
+                            0 };
+                        mpHookFunction(&hookInfo, mpHookFunctionContext);
+                    }
+#endif
+
+                    UnlinkChunk(pHighestChunk);
+                    CoreBlock *const pCoreBlockSaved = pCoreBlock;
+                    pCoreBlock = pCoreBlock->mpNextCoreBlock;
+                    UnlinkCoreBlock(pCoreBlockSaved);
+                    const size_t nCoreBlockSize = pCoreBlockSaved->mnSize;
+
+                    if (FreeCore(pCoreBlockSaved, false)) {
+                        nCoreTrimmed += nCoreBlockSize;
+
+                        if (pHighestChunk == mpTopChunk) {
+                            mpTopChunk = GetInitialTopChunk();
+                            // FindAndSetNewTopChunk();
+                        }
+                    } else {
+                        // PlaceUnsortedChunkInBin(pHighestChunk, GetChunkSize(pHighestChunk), false);
+                        LinkCoreBlock(pCoreBlockSaved, pCoreBlock);
+                        pCoreBlock = pCoreBlockSaved;
+                    }
+
+                    continue;
+                }
+#endif
+                if (pCoreBlock->mbShouldTrim) {
+                    const size_t nHighestChunkSize = GetChunkSize(pHighestChunk);
+                    const size_t nPaddingSize = (size_t)(nPadding + (2 * kMinChunkSize) + sizeof(CoreBlock));
+
+                    if (nHighestChunkSize > nPaddingSize) {
+#ifdef _WIN32
+                        size_t nDecommitSizeIncrement = AlignUp(mnCoreIncrementSize / 2, 65536);
+                        size_t nDecommitSize = nDecommitSizeIncrement;
+                        size_t nDecommitLimit = nHighestChunkSize - nPaddingSize;
+
+                        while ((nDecommitSize + nDecommitSizeIncrement) < nDecommitLimit) {
+                            nDecommitSize += nDecommitSizeIncrement;
+                        }
+
+                        if (nDecommitSize < nDecommitLimit) {
+                            char *const pVirtualFreeLocation = (char *)pCoreBlock + pCoreBlock->mnSize - nDecommitSize;
+
+                            if (VirtualFree(pVirtualFreeLocation, nDecommitSize, MEM_DECOMMIT)) {
+                                nCoreTrimmed += nDecommitSize;
+                                pCoreBlock->mnSize -= nDecommitSize;
+
+                                if (pHighestChunk != mpTopChunk) {
+                                    UnlinkChunk(pHighestChunk);
+                                }
+
+                                SetChunkSizePreserveFlags(
+                                    pHighestChunk, (size_t)((nHighestChunkSize - nDecommitSize) + kDoubleFenceChunkSize));
+                                AddDoubleFencepost(pHighestChunk, 0);
+
+                                if (pHighestChunk != mpTopChunk) {
+                                    Chunk *const pUnsortedBinHeadChunk = GetUnsortedBin();
+                                    LinkChunk(pHighestChunk, pUnsortedBinHeadChunk, pUnsortedBinHeadChunk->mpNextChunk);
+                                }
+                            }
+                        }
+#endif
+                    }
+                }
+            }
+        }
+    }
+
+    return nCoreTrimmed;
 }
 
-void GeneralAllocator::ClearCache() {}
-
-void GeneralAllocator::SetMallocFailureFunction(MallocFailureFunction pMallocFailureFunction, void *pContext) {}
-
-void GeneralAllocator::SetHookFunction(HookFunction pHookFunction, void *pContext) {}
-
-void GeneralAllocator::SetOption(int32_t option, int32_t nValue) {}
-
-size_t GeneralAllocator::GetUsableSize(const void *pData)
+void GeneralAllocator::ClearCache()
 {
+    PPMAutoMutex lock(mpMutex);
+    ClearFastBins();
+}
+
+void GeneralAllocator::SetMallocFailureFunction(MallocFailureFunction pMallocFailureFunction, void *pContext)
+{
+    mpMallocFailureFunction = pMallocFailureFunction;
+    mpMallocFailureFunctionContext = pContext;
+}
+
+void GeneralAllocator::SetHookFunction(HookFunction pHookFunction, void *pContext)
+{
+#ifdef ALLOCATOR_USEHOOKS
+    mpHookFunction = pHookFunction;
+    mpHookFunctionContext = pContext;
+#endif
+}
+
+void GeneralAllocator::SetOption(int32_t option, int32_t nValue)
+{
+    switch (option) {
+        case kOptionEnableThreadSafety:
+            if (nValue) {
+                if (!mpMutex) {
+                    mpMutex = PPMMutexCreate(mMutexData);
+                }
+            } else {
+                if (mpMutex) {
+                    PPMMutexLock(mpMutex);
+                    void *const pMutex = mpMutex;
+                    mpMutex = NULL;
+                    PPMMutexUnlock(pMutex);
+                    PPMMutexDestroy(pMutex);
+                }
+            }
+
+            break;
+        case kOptionEnableHighAllocation:
+            if (nValue) {
+                if (!mbHighFenceInternallyDisabled && !mpHighFence) {
+                    mpHighFence = (void *)(1);
+                }
+            } else {
+                mpHighFence = nullptr;
+            }
+            break;
+
+        case kOptionEnableSystemAlloc:
+            mbSystemAllocEnabled = (nValue != 0);
+            break;
+
+        case kOptionNewCoreSize:
+            if (nValue == 0) {
+                mnNewCoreSize = kDefaultNewCoreSize;
+            } else {
+                mnNewCoreSize = ((size_t)nValue > mnPageSize ? (size_t)nValue : mnPageSize);
+                mnNewCoreSize = AlignUp(mnNewCoreSize, mnPageSize);
+            }
+
+            break;
+
+        case kOptionCoreIncrementSize:
+            if (nValue == 0) {
+                mnCoreIncrementSize = kDefaultCoreIncrementSize;
+            } else {
+                mnCoreIncrementSize = ((size_t)nValue > mnPageSize ? (size_t)nValue : mnPageSize);
+                mnCoreIncrementSize = AlignUp(mnCoreIncrementSize, mnPageSize);
+
+                if (mnCoreIncrementSize > mnNewCoreSize) {
+                    mnCoreIncrementSize = mnNewCoreSize;
+                }
+            }
+            break;
+
+        case kOptionMaxFastBinRequestSize:
+            ClearFastBins();
+            SetMaxFastBinDataSize((size_t)nValue);
+            break;
+
+        case kOptionTrimThreshold:
+            mnTrimThreshold = (size_t)nValue;
+            break;
+
+        case kOptionTopPad:
+            mnTopPad = (size_t)nValue;
+            break;
+
+        case kOptionMMapThreshold:
+            mnMMapThreshold = (size_t)nValue;
+            break;
+
+        case kOptionMMapMaxAllowed:
+            mnMMapMaxAllowed = (int32_t)nValue;
+            break;
+
+        case kOptionMMapTopDown:
+            mbMMapTopDown = (nValue != 0);
+            break;
+
+        case kOptionTraceInternalMemory:
+            mbTraceInternalMemory = (nValue != 0);
+            break;
+
+        case kOptionMaxMallocFailureCount:
+            mnMaxMallocFailureCount = (uint32_t)nValue;
+            break;
+    }
+}
+
+size_t GeneralAllocator::GetUsableSize(const void *pData) const
+{
+    PPMAutoMutex lock(mpMutex);
+
+    if (pData) {
+        const Chunk *const pChunk = GetChunkPtrFromDataPtr(pData);
+        const size_t nChunkSize = GetChunkSize(pChunk);
+
+        if (GetChunkIsMMapped(pChunk)) {
+            return nChunkSize - kDataPtrOffset;
+        } else if (GetChunkIsInUse(pChunk)) {
+            return (nChunkSize - kDataPtrOffset);
+        }
+    }
+
     return 0;
 }
 
 size_t GeneralAllocator::GetBlockSize(const void *pData, bool bNetSize)
 {
-    return 0;
+    PPMAutoMutex lock(mpMutex);
+
+    const Chunk *const pChunk = GetChunkPtrFromDataPtr(pData);
+    size_t nChunkSize = GetChunkSize(pChunk);
+
+    if (bNetSize) {
+        nChunkSize -= kSizeTypeSize;
+    }
+
+    return nChunkSize;
 }
 
 size_t GeneralAllocator::GetLargestFreeBlock(bool bClearCache)
 {
-    return 0;
+    PPMAutoMutex lock(mpMutex);
+    size_t nLargest = 0;
+
+    if (mpTopChunk) {
+        if (bClearCache) {
+            ClearFastBins();
+        }
+
+        nLargest = GetChunkSize(mpTopChunk);
+
+        for (size_t i((kBinCount)-1); i >= 1; --i) {
+            const Chunk *const pBin = GetBin((int32_t)i);
+
+            if (pBin->mpNextChunk != pBin) {
+                const size_t n = GetChunkSize(pBin->mpNextChunk);
+                if (n > nLargest) {
+                    nLargest = n;
+                }
+
+                break;
+            }
+        }
+
+        const Chunk *const pBegin = GetUnsortedBin();
+        for (const Chunk *pChunk = pBegin->mpNextChunk; pChunk != pBegin; pChunk = pChunk->mpNextChunk) {
+            const size_t n = GetChunkSize(pChunk);
+
+            if (n > nLargest) {
+                nLargest = n;
+            }
+        }
+
+        // BFME2ex WB
+        if (!bClearCache && nLargest < mnMaxFastBinChunkSize) {
+            for (int i = (kFastBinCount - 1); i >= 0; i--) {
+                const Chunk *pChunk = mpFastBinArray[i];
+
+                if (pChunk) {
+                    const size_t n = GetChunkSize(pChunk);
+
+                    if (n > nLargest) {
+                        nLargest = n;
+                    }
+
+                    break;
+                }
+            }
+        }
+    }
+
+    return nLargest;
 }
 
-void GeneralAllocator::SetTraceFunction(TraceFunction pTraceFunction, void *pContext) {}
+void GeneralAllocator::SetTraceFunction(TraceFunction pTraceFunction, void *pContext)
+{
+    mpTraceFunction = pTraceFunction;
+    mpTraceFunctionContext = pContext;
+}
 
-void GeneralAllocator::SetTraceFieldDelimiters(uint8_t fieldDelimiter, uint8_t recordDelimiter) {}
+void GeneralAllocator::SetTraceFieldDelimiters(uint8_t fieldDelimiter, uint8_t recordDelimiter)
+{
+    mcTraceFieldDelimiter = fieldDelimiter;
+    mcTraceRecordDelimiter = recordDelimiter;
+}
 
 bool GeneralAllocator::ValidateHeap(HeapValidationLevel heapValidationLevel)
 {
-    return false;
+    int nErrorCount = 0;
+
+    if (!mbHeapValidationActive) {
+        mbHeapValidationActive = true;
+        nErrorCount += CheckState(heapValidationLevel);
+        mbHeapValidationActive = false;
+    }
+
+    return nErrorCount == 0;
 }
 
-void GeneralAllocator::SetAutoHeapValidation(HeapValidationLevel heapValidationLevel, size_t nFrequency) {}
+void GeneralAllocator::SetAutoHeapValidation(HeapValidationLevel heapValidationLevel, size_t nFrequency)
+{
+    mnAutoHeapValidationFrequency = nFrequency > 0 ? nFrequency : 1;
+    mAutoHeapValidationLevel = heapValidationLevel;
+    mnAutoHeapValidationEventCount = 0;
+}
 
 void GeneralAllocator::TraceAllocatedMemory(
     TraceFunction pTraceFunction, void *pTraceFunctionContext, void *pStorage, size_t nStorageSize, int32_t nBlockTypeFlags)
 {
+    char pTraceBuffer[4000];
+    PPMAutoMutex lock(mpMutex);
+
+    if (GetFastBinChunksExist()) {
+        ClearFastBins();
+    }
+
+    if (!pTraceFunction) {
+        pTraceFunction = mpTraceFunction;
+    }
+
+    if (!pTraceFunctionContext) {
+        pTraceFunctionContext = mpTraceFunctionContext;
+    }
+
+    if (pTraceFunction) {
+        const void *const pContext = ReportBegin(NULL, nBlockTypeFlags, false, pStorage, nStorageSize);
+
+        for (const BlockInfo *pBlockInfo = ReportNext(pContext); pBlockInfo; pBlockInfo = ReportNext(pContext)) {
+            const Chunk *pChunk = (const Chunk *)pBlockInfo->mpCore;
+
+            if (mbTraceInternalMemory || !GetChunkIsInternal(pChunk)) {
+                DescribeChunk(pChunk, pTraceBuffer, sizeof(pTraceBuffer) / sizeof(pTraceBuffer[0]), true);
+                pTraceFunction(pTraceBuffer, pTraceFunctionContext);
+            }
+        }
+
+        ReportEnd(pContext);
+    }
 }
 
 size_t GeneralAllocator::DescribeData(const void *pData, char *pBuffer, size_t nBufferLength)
 {
-    return 0;
+    PPMAutoMutex lock(mpMutex);
+
+    return DescribeChunk(GetChunkPtrFromDataPtr(pData), pBuffer, nBufferLength, true);
 }
 
-const void *GeneralAllocator::ValidateAddress(const void *pAddress, int32_t addressType) const
+bool GeneralAllocator::ValidateAddress(const void *pAddress, bool addressType) const
 {
-    return nullptr;
+    PPMAutoMutex lock(mpMutex);
+    const CoreBlock *const pCoreBlock = FindCoreBlockForAddress(pAddress);
+
+    if (pCoreBlock) {
+        const Chunk *pCurrentChunk = (Chunk *)pCoreBlock->mpCore;
+        const Chunk *pNextChunk = GetNextChunk(pCurrentChunk);
+
+        while (pNextChunk < pAddress && pNextChunk != pCurrentChunk) {
+            pCurrentChunk = pNextChunk;
+            pNextChunk = GetNextChunk(pNextChunk);
+        }
+
+        if (GetChunkIsInUse(pCurrentChunk)) {
+            const void *const pData = GetDataPtrFromChunkPtr(pCurrentChunk);
+
+            if (addressType == kAddressTypeSpecific) {
+                if (pAddress == pData) {
+                    return true;
+                }
+            } else if (pAddress >= pData && (Chunk *)pAddress < pNextChunk) {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 bool GeneralAllocator::UnknownFunc()
 {
-    return false;
+    return true;
 }
 
 bool GeneralAllocator::IsAddressHigh(const void *pAddress)
 {
+    for (CoreBlock *pCoreBlock = mHeadCoreBlock.mpNextCoreBlock; pCoreBlock != &mHeadCoreBlock;
+         pCoreBlock = pCoreBlock->mpNextCoreBlock) {
+        if (pAddress >= (void *)pCoreBlock->mpCore && pAddress < (void *)(pCoreBlock->mpCore + pCoreBlock->mnSize)) {
+            return pAddress > mpHighFence;
+        }
+    }
+
     return false;
 }
 
 void *GeneralAllocator::TakeSnapshot(int32_t nBlockTypeFlags, bool bMakeCopy, void *pStorage, size_t nStorageSize)
 {
-    return nullptr;
+    PPMAutoMutex lock(mpMutex);
+    Snapshot *pSnapshot = NULL;
+
+    if (bMakeCopy) {
+        if (GetFastBinChunksExist()) {
+            ClearFastBins();
+        }
+
+        size_t nBlockCount = 0;
+
+        for (size_t nPass = 0; nPass < 2; nPass++) {
+            size_t nBlockIndex = 0;
+
+            if (nPass) {
+                const size_t kBlockCountExtra = 4;
+                nBlockCount += kBlockCountExtra;
+                const size_t nSizeOfSnapshot = sizeof(Snapshot) + (nBlockCount * sizeof(BlockInfo));
+
+                if (pStorage && nStorageSize < nSizeOfSnapshot) {
+                    pStorage = NULL;
+                }
+
+                void *const pData = pStorage ? pStorage : MallocInternal(nSizeOfSnapshot, kAllocationFlagInternal);
+
+                if (pData) {
+                    SetChunkIsInternal(GetChunkPtrFromDataPtr(pData));
+                    pSnapshot = new (pData) Snapshot(nSizeOfSnapshot, nBlockTypeFlags);
+                    pSnapshot->mnSizeOfThis = nSizeOfSnapshot;
+                    pSnapshot->mbUserAllocated = (pStorage != NULL);
+                    pSnapshot->mbDynamic = false;
+                    pSnapshot->mnBlockInfoCount = nBlockCount;
+                    pSnapshot->mnBlockInfoIndex = 0;
+                }
+
+                if (nBlockCount == kBlockCountExtra) {
+                    break;
+                }
+            }
+
+            CoreBlock *pCoreBlock = mHeadCoreBlock.mpNextCoreBlock;
+            while (pCoreBlock != &mHeadCoreBlock) {
+                if (nBlockTypeFlags & kBlockTypeCore) {
+                    if (nPass && (nBlockIndex < nBlockCount)) {
+                        GetBlockInfoForCoreBlock(pCoreBlock, &pSnapshot->mBlockInfo[nBlockIndex]);
+                    }
+
+                    nBlockIndex++;
+                }
+
+                if (nBlockTypeFlags & (kBlockTypeAllocated | kBlockTypeFree)) {
+                    const Chunk *pChunk = (Chunk *)pCoreBlock->mpCore;
+                    const Chunk *pFenceChunk = GetFenceChunk(pCoreBlock);
+
+                    while (pChunk < pFenceChunk) {
+                        const size_t bIsInUse = GetChunkIsInUse(pChunk);
+
+                        if (bIsInUse) {
+                            if (nBlockTypeFlags & kBlockTypeAllocated) {
+                                if ((nBlockTypeFlags & kBlockTypeInternal) || !GetChunkIsInternal(pChunk)) {
+                                    if (nPass && (nBlockIndex < nBlockCount))
+                                        GetBlockInfoForChunk(pChunk, &pSnapshot->mBlockInfo[nBlockIndex]);
+                                    nBlockIndex++;
+                                }
+                            }
+                        } else {
+                            if (nBlockTypeFlags & kBlockTypeFree) {
+                                if ((nBlockTypeFlags & kBlockTypeInternal) || !GetChunkIsInternal(pChunk)) {
+                                    if (nPass && (nBlockIndex < nBlockCount))
+                                        GetBlockInfoForChunk(pChunk, &pSnapshot->mBlockInfo[nBlockIndex]);
+                                    nBlockIndex++;
+                                }
+                            }
+                        }
+
+                        if (!bIsInUse && (pChunk == pChunk->mpNextChunk)) {
+                            break;
+                        }
+
+                        pChunk = GetNextChunk(pChunk);
+                    }
+                }
+
+                pCoreBlock = pCoreBlock->mpNextCoreBlock;
+            }
+
+            if (nBlockTypeFlags & kBlockTypeAllocated) {
+                const Chunk *pChunk = mHeadMMapChunk.mpNextChunk;
+
+                while (pChunk != &mHeadMMapChunk) {
+                    const Chunk *const pMMappedChunk = GetMMapChunkFromMMapListChunk(pChunk);
+
+                    if ((nBlockTypeFlags & kBlockTypeInternal) || !GetChunkIsInternal(pChunk)) {
+                        if (nPass && (nBlockIndex < nBlockCount)) {
+                            GetBlockInfoForChunk(pMMappedChunk, &pSnapshot->mBlockInfo[nBlockIndex]);
+                        }
+
+                        nBlockIndex++;
+                    }
+
+                    pChunk = pChunk->mpNextChunk;
+                }
+            }
+
+            nBlockCount = nBlockIndex;
+
+            if (nPass) {
+                pSnapshot->mnBlockInfoCount = nBlockIndex;
+            }
+        }
+    } else {
+        if (pStorage && (nStorageSize < sizeof(Snapshot))) {
+            pStorage = NULL;
+        }
+
+        const size_t nSizeOfSnapshot = sizeof(Snapshot);
+        void *const pData = pStorage ? pStorage : MallocInternal(nSizeOfSnapshot, kAllocationFlagInternal);
+
+        if (pData) {
+            SetChunkIsInternal(GetChunkPtrFromDataPtr(pData));
+            pSnapshot = new (pData) Snapshot(nSizeOfSnapshot, nBlockTypeFlags);
+            pSnapshot->mnSizeOfThis = nSizeOfSnapshot;
+            pSnapshot->mbUserAllocated = (pStorage != NULL);
+            pSnapshot->mbDynamic = true;
+            pSnapshot->mbCoreBlockReported = false;
+            pSnapshot->mpCurrentCoreBlock = mHeadCoreBlock.mpNextCoreBlock;
+            pSnapshot->mpCurrentChunk = NULL;
+            pSnapshot->mpCurrentMChunk = mHeadMMapChunk.mpNextChunk;
+        }
+    }
+
+    return pSnapshot;
 }
 
-void GeneralAllocator::FreeSnapshot(void *pSnapshot) {}
-
-bool GeneralAllocator::ReportHeap(
-    HeapReportFunction, void *pContext, int32_t nBlockTypeFlags, bool bMakeCopy, void *pStorage, size_t nStorageSize)
+void GeneralAllocator::FreeSnapshot(void *pContext)
 {
-    return false;
+    Snapshot *const pSnapshot = (Snapshot *)pContext;
+
+    if (pSnapshot->mnMagicNumber == Snapshot::kSnapshotMagicNumber) {
+        if (!pSnapshot->mbUserAllocated) {
+            FreeInternal(pSnapshot);
+        }
+    }
+}
+
+bool GeneralAllocator::ReportHeap(HeapReportFunction pHeapReportFunction,
+    void *pContext,
+    int32_t nBlockTypeFlags,
+    bool bMakeCopy,
+    void *pStorage,
+    size_t nStorageSize)
+{
+    bool bReturnValue = false;
+
+    if (pHeapReportFunction) {
+        Snapshot *const pSnapshot = (Snapshot *)ReportBegin(NULL, nBlockTypeFlags, bMakeCopy, pStorage, nStorageSize);
+
+        if (pSnapshot) {
+            const BlockInfo *pBlockInfo = ReportNext(pSnapshot, nBlockTypeFlags);
+            bReturnValue = true;
+
+            while (bReturnValue && pBlockInfo) {
+                bReturnValue = pHeapReportFunction(pBlockInfo, pContext);
+                pBlockInfo = ReportNext(pSnapshot, nBlockTypeFlags);
+            }
+        }
+
+        ReportEnd(pSnapshot);
+    }
+
+    return bReturnValue;
 }
 
 const void *GeneralAllocator::ReportBegin(
-    void *pSnapshot, int32_t nBlockTypeFlags, bool bMakeCopy, void *pStorage, size_t nStorageSize)
+    void *pContext, int32_t nBlockTypeFlags, bool bMakeCopy, void *pStorage, size_t nStorageSize)
 {
-    return nullptr;
+    Snapshot *pSnapshot;
+
+    if (pContext) {
+        pSnapshot = (Snapshot *)pContext;
+
+        if (pSnapshot->mnMagicNumber != Snapshot::kSnapshotMagicNumber) {
+            pSnapshot = NULL;
+        }
+    } else {
+        pSnapshot = (Snapshot *)TakeSnapshot(nBlockTypeFlags, bMakeCopy, pStorage, nStorageSize);
+
+        if (pSnapshot) {
+            pSnapshot->mbReport = true;
+        }
+    }
+
+    return pSnapshot;
 }
 
-Allocator::GeneralAllocator::BlockInfo const *GeneralAllocator::ReportNext(const void *pContext, int32_t nBlockTypeFlags)
+const Allocator::GeneralAllocator::BlockInfo *GeneralAllocator::ReportNext(const void *pContext, int32_t nBlockTypeFlags)
 {
-    return nullptr;
+    Snapshot *const pSnapshot = (Snapshot *)pContext;
+
+    if (pSnapshot) {
+        if (pSnapshot->mnMagicNumber == Snapshot::kSnapshotMagicNumber) {
+            if (pSnapshot->mbDynamic) {
+                nBlockTypeFlags &= pSnapshot->mnBlockTypeFlags;
+
+                while (pSnapshot->mpCurrentCoreBlock != &mHeadCoreBlock) {
+                    const Chunk *pFenceChunk = NULL;
+
+                    if (pSnapshot->mpCurrentCoreBlock->mnSize) {
+                        pFenceChunk = GetFenceChunk(pSnapshot->mpCurrentCoreBlock);
+
+                        if (pSnapshot->mpCurrentChunk) {
+                            pSnapshot->mpCurrentChunk = GetNextChunk(pSnapshot->mpCurrentChunk);
+                        } else {
+                            pSnapshot->mpCurrentChunk = (Chunk *)pSnapshot->mpCurrentCoreBlock->mpCore;
+                        }
+
+                        while ((pSnapshot->mpCurrentChunk != pFenceChunk)
+                            && !ChunkMatchesBlockType(pSnapshot->mpCurrentChunk, nBlockTypeFlags)) {
+                            pSnapshot->mpCurrentChunk = GetNextChunk(pSnapshot->mpCurrentChunk);
+                        }
+
+                        if (pSnapshot->mpCurrentChunk != pFenceChunk) {
+                            break;
+                        }
+                    }
+
+                    if (!pSnapshot->mpCurrentCoreBlock->mnSize || (pSnapshot->mpCurrentChunk == pFenceChunk)) {
+                        do {
+                            pSnapshot->mpCurrentCoreBlock = pSnapshot->mpCurrentCoreBlock->mpNextCoreBlock;
+                        } while (
+                            (pSnapshot->mpCurrentCoreBlock != &mHeadCoreBlock) && !pSnapshot->mpCurrentCoreBlock->mnSize);
+
+                        pSnapshot->mpCurrentChunk = NULL;
+                    }
+                }
+
+                if (pSnapshot->mpCurrentCoreBlock != &mHeadCoreBlock) {
+                    GetBlockInfoForChunk(pSnapshot->mpCurrentChunk, &pSnapshot->mBlockInfo[0]);
+                    return &pSnapshot->mBlockInfo[0];
+                } else {
+                    if (nBlockTypeFlags & kBlockTypeAllocated && pSnapshot->mpCurrentMChunk != &mHeadMMapChunk) {
+                        const Chunk *const pChunk = GetMMapChunkFromMMapListChunk(pSnapshot->mpCurrentMChunk);
+                        pSnapshot->mpCurrentMChunk = pSnapshot->mpCurrentMChunk->mpNextChunk;
+                        GetBlockInfoForChunk(pChunk, &pSnapshot->mBlockInfo[0]);
+                        return &pSnapshot->mBlockInfo[0];
+                    }
+                }
+            } else {
+                while ((pSnapshot->mnBlockInfoIndex < pSnapshot->mnBlockInfoCount)
+                    && !(pSnapshot->mBlockInfo[pSnapshot->mnBlockInfoIndex].mBlockType & nBlockTypeFlags)) {
+                    ++pSnapshot->mnBlockInfoIndex;
+                }
+
+                if (pSnapshot->mnBlockInfoIndex < pSnapshot->mnBlockInfoCount) {
+                    return (pSnapshot->mBlockInfo + pSnapshot->mnBlockInfoIndex++);
+                }
+            }
+        }
+    }
+
+    return NULL;
 }
 
 void GeneralAllocator::ReportEnd(const void *pContext) {}
@@ -544,7 +1158,7 @@ GeneralAllocator::Chunk *GeneralAllocator::AddCoreInternal(size_t nMinSize)
 #ifdef _WIN32
         pCoreBlock->mnReservedSize = nReservedSize;
 #endif
-#if ALLOCATOR_USEHOOKS
+#ifdef ALLOCATOR_USEHOOKS
         if (mpHookFunction) {
             // We leave the mutex locked for this call, though ideally we would respect mbLockDuringHookCalls.
             const HookInfo hookInfo = { this,
@@ -657,7 +1271,7 @@ void GeneralAllocator::UnlinkCoreBlock(CoreBlock *pCoreBlock)
     pCoreBlock->mpNextCoreBlock->mpPrevCoreBlock = pCoreBlock->mpPrevCoreBlock;
 }
 
-GeneralAllocator::CoreBlock *GeneralAllocator::FindCoreBlockForAddress(const void *pAddress)
+GeneralAllocator::CoreBlock *GeneralAllocator::FindCoreBlockForAddress(const void *pAddress) const
 {
     return nullptr;
 }
@@ -729,6 +1343,68 @@ GeneralAllocator::Chunk *GeneralAllocator::MakeChunkFromCore(void *pCore, size_t
     SetChunkSize(pChunk, size_t(nCoreSize | nFlags));
     AddDoubleFencepost(pChunk, 0);
     return pChunk;
+}
+
+void GeneralAllocator::GetBlockInfoForCoreBlock(const CoreBlock *pCoreBlock, BlockInfo *pBlockInfo) const
+{
+    pBlockInfo->mBlockType = kBlockTypeCore;
+    pBlockInfo->mpCore = pCoreBlock->mpCore;
+    pBlockInfo->mnBlockSize = pCoreBlock->mnSize;
+    pBlockInfo->mnDataSize = pCoreBlock->mnReservedSize;
+    pBlockInfo->mbMemoryMapped = false;
+}
+
+void GeneralAllocator::GetBlockInfoForChunk(const Chunk *pChunk, BlockInfo *pBlockInfo) const
+{
+    const size_t bIsAllocated = GetChunkIsInUse(pChunk);
+    const size_t bIsMMapped = GetChunkIsMMapped(pChunk);
+    const size_t nChunkSize = GetChunkSize(pChunk);
+
+    if (bIsAllocated) {
+        const size_t bIsInternal = GetChunkIsInternal(pChunk);
+        const size_t nUsableSize = GetUsableSize(GetDataPtrFromChunkPtr(pChunk));
+        pBlockInfo->mBlockType = kBlockTypeAllocated;
+
+        if (bIsMMapped) {
+            pBlockInfo->mpCore = pChunk;
+            pBlockInfo->mnBlockSize = pChunk->mnPriorSize + nChunkSize + kMinChunkSize;
+            pBlockInfo->mpData = GetDataPtrFromChunkPtr(pChunk);
+            pBlockInfo->mnDataSize = nUsableSize;
+            pBlockInfo->mbMemoryMapped = true;
+        } else {
+            pBlockInfo->mpCore = pChunk;
+            pBlockInfo->mnBlockSize = nChunkSize;
+            pBlockInfo->mpData = GetDataPtrFromChunkPtr(pChunk);
+            pBlockInfo->mnDataSize = nUsableSize;
+            pBlockInfo->mbMemoryMapped = false;
+        }
+    } else {
+        pBlockInfo->mBlockType = kBlockTypeFree;
+        pBlockInfo->mpCore = pChunk;
+        pBlockInfo->mnBlockSize = nChunkSize;
+        pBlockInfo->mpData = GetPostHeaderPtrFromChunkPtr(pChunk);
+        pBlockInfo->mnDataSize = GetChunkSize(pChunk) - sizeof(Chunk);
+        pBlockInfo->mbMemoryMapped = false;
+    }
+}
+
+int GeneralAllocator::ChunkMatchesBlockType(const Chunk *pChunk, int nBlockTypeFlags)
+{
+    if ((nBlockTypeFlags & kBlockTypeInternal) || !GetChunkIsInternal(pChunk)) {
+        if ((nBlockTypeFlags & (kBlockTypeAllocated | kBlockTypeFree)) == (kBlockTypeAllocated | kBlockTypeFree)) {
+            return 1;
+        }
+
+        const int bIsAllocated = GetChunkIsInUse(pChunk) && !GetChunkIsFastBin(pChunk);
+
+        if (nBlockTypeFlags & kBlockTypeAllocated) {
+            return bIsAllocated;
+        } else if (nBlockTypeFlags & kBlockTypeFree) {
+            return bIsAllocated ? 0 : 1;
+        }
+    }
+
+    return 0;
 }
 
 void GeneralAllocator::AddDoubleFencepost(Chunk *pChunk, size_t nPrevChunkFlags)
